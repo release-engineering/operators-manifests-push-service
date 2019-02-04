@@ -1,0 +1,8 @@
+#
+# Copyright (C) 2019 Red Hat, Inc
+# see the LICENSE file for license
+#
+
+ENV_CONF_FILE = 'OMPS_CONF_FILE'
+ENV_CONF_SECTION = 'OMPS_CONF_SECTION'
+ENV_DEVELOPER_ENV = 'OMPS_DEVELOPER_ENV'

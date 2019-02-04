@@ -1,13 +1,29 @@
 # Operators Manifests Push Service (OMPS)
 Service for pushing operators manifests to quay.io from various sources.
 
+## Settings
+
+### Configuration file
+
+Setting location of config file:
+```
+export OMPS_CONF_FILE=/path/to/config.py
+export OMPS_CONF_SECTION=ProdConfig
+```
+
+Configuration file example:
+```
+class ProdConfig:
+    SECRET_KEY = "123456789secretkeyvalue"
+```
+
 ## Development
 
 ### Running Flask dev. server
 
 To run app locally for testing, use:
 ```bash
-FLASK_APP=omps/app.py flask run
+OMPS_DEVELOPER_ENV=true FLASK_APP=omps/app.py flask run
 ```
 
 ### Installing with test dependencies
