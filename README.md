@@ -17,6 +17,20 @@ class ProdConfig:
     SECRET_KEY = "123456789secretkeyvalue"
 ```
 
+## Running service
+
+The best way is to run service from a container:
+```bash
+docker build -t omps:latest .
+docker run --rm -p 8080:8080 omps:latest
+```
+
+Running container with custom CA certificate
+```bash
+docker run --rm -p 8080:8080 -e CA_URL='http://example.com/ca-cert.crt' omps:latest
+```
+
+
 ## Development
 
 ### Running Flask dev. server
