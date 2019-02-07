@@ -58,3 +58,6 @@ def test_404_for_mistyped_entrypoints(client, endpoint):
     """Test if HTTP 404 is returned for unexpected endpoints"""
     rv = client.post(endpoint)
     assert rv.status_code == 404
+    rv_json = rv.get_json()
+    assert rv_json['error'] == 'NotFound'
+    assert rv_json['status'] == 404

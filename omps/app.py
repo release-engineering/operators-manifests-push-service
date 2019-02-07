@@ -7,6 +7,7 @@ import logging
 
 from flask import Flask
 
+from .errors import init_errors_handling
 from .push import BLUEPRINT as PUSH_BP
 from .settings import init_config
 
@@ -19,6 +20,7 @@ def create_app():
     app = Flask('omps')
 
     _load_config(app)
+    init_errors_handling(app)
     _register_blueprints(app)
 
     return app
