@@ -76,6 +76,16 @@ class Config(object):
             'default': False,
             'desc': 'Debug mode',
         },
+        'log_format': {
+            'type': str,
+            'default': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            'desc': 'Logging messages format',
+        },
+        'log_level': {
+            'type': str,
+            'default': 'INFO',
+            'desc': 'Logging level',
+        },
     }
 
     def __init__(self, conf_section_obj):
@@ -143,3 +153,13 @@ class Config(object):
     #
     # Register your _setifok_* handlers here
     #
+
+    def _setifok_log_level(self, s):
+        level = s.upper()
+        allowed = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
+        if level not in allowed:
+            raise ValueError(
+                "Unsupported value of log_level: {}; allowed values: {}".format(
+                    level, ','.join(allowed)
+                ))
+        self._log_level = level
