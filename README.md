@@ -15,6 +15,8 @@ Configuration file example:
 ```
 class ProdConfig:
     SECRET_KEY = "123456789secretkeyvalue"
+    LOG_LEVEL = "INFO"
+    LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 ```
 
 ## Running service

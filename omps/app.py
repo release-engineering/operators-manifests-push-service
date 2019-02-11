@@ -8,6 +8,7 @@ import logging
 from flask import Flask
 
 from .errors import init_errors_handling
+from .logger import init_logging
 from .push import BLUEPRINT as PUSH_BP
 from .settings import init_config
 
@@ -20,17 +21,25 @@ def create_app():
     app = Flask('omps')
 
     _load_config(app)
-    init_errors_handling(app)
+    _init_errors_handling(app)
     _register_blueprints(app)
 
     return app
 
 
 def _load_config(app):
-    init_config(app)
+    conf = init_config(app)
+    init_logging(conf)
+    logger.debug('Config loaded. Logging initialized')
+
+
+def _init_errors_handling(app):
+    logger.debug('Initializing errors handling')
+    init_errors_handling(app)
 
 
 def _register_blueprints(app):
+    logger.debug('Registering blueprints')
     app.register_blueprint(PUSH_BP, url_prefix='/push')
 
 
