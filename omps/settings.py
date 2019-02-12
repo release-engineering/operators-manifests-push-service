@@ -78,7 +78,10 @@ class Config(object):
         },
         'log_format': {
             'type': str,
-            'default': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            'default': (
+                '%(asctime)s - [%(process)d] %(name)s - %(levelname)s - '
+                '%(message)s'
+            ),
             'desc': 'Logging messages format',
         },
         'log_level': {
