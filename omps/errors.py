@@ -9,6 +9,21 @@ from flask import jsonify
 from werkzeug.exceptions import HTTPException
 
 
+class OMPSError(Exception):
+    """Base OMPSError"""
+    code = 500
+
+
+class OMPSUploadedFileError(OMPSError):
+    """Uploaded file doesn't meet expectations"""
+    code = 400
+
+
+class OMPSExpectedFileError(OMPSError):
+    """No file was uploaded, but a file was expected"""
+    code = 400
+
+
 def json_error(status, error, message):
     response = jsonify(
         {'status': status,
@@ -20,6 +35,11 @@ def json_error(status, error, message):
 
 def init_errors_handling(app):
     """Initialize error handling of the app"""
+
+    @app.errorhandler(OMPSError)
+    def omps_errors(e):
+        """Handle OMPS application errors"""
+        return json_error(e.code, e.__class__.__name__, str(e))
 
     @app.errorhandler(HTTPException)
     def standard_http_errors(e):

@@ -6,14 +6,24 @@
 import pytest
 
 
-def test_push_zipfile(client):
+def test_push_zipfile(client, valid_manifests_archive):
     """Test REST API for pushing operators form zipfile"""
-    rv = client.post('/push/organization-X/repo-Y/zipfile')
-    assert rv.status_code == 200
+    with open(valid_manifests_archive, 'rb') as f:
+        data = {
+            'file': (f, f.name),
+        }
+        rv = client.post(
+            '/push/organization-X/repo-Y/zipfile',
+            data=data,
+            content_type='multipart/form-data',
+        )
+
+    assert rv.status_code == 200, rv.get_json()
     expected = {
         'organization': 'organization-X',
         'repo': 'repo-Y',
-        'msg': 'Not Implemented. Testing only'
+        'msg': 'Not Implemented. Testing only',
+        'extracted_files': ['empty.yml'],
     }
     assert rv.get_json() == expected
 

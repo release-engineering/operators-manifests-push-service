@@ -17,6 +17,8 @@ class DefaultConfig:
 
     DEBUG = False
     TESTING = False
+    ZIPFILE_MAX_UNCOMPRESSED_SIZE = constants.DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE
+    MAX_CONTENT_LENGTH = constants.DEFAULT_MAX_CONTENT_LENGTH
 
 
 class ProdConfig(DefaultConfig):
@@ -88,6 +90,11 @@ class Config(object):
             'type': str,
             'default': 'INFO',
             'desc': 'Logging level',
+        },
+        'zipfile_max_uncompressed_size': {
+            'type': int,
+            'default': constants.DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE,
+            'desc': 'Max size of uncompressed archive to be accepted',
         },
     }
 
@@ -166,3 +173,8 @@ class Config(object):
                     level, ','.join(allowed)
                 ))
         self._log_level = level
+
+    def _setifok_zipfile_max_uncompressed_size(self, s):
+        if s <= 0:
+            raise ValueError("Must be positive number")
+        self._zipfile_max_uncompressed_size = s
