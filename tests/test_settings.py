@@ -5,9 +5,36 @@
 
 """Tests for omps.settings module"""
 
+from flask import Flask
 import pytest
 
+from omps import constants
 from omps.settings import Config, DefaultConfig
+
+
+@pytest.mark.parametrize('key,expected', (
+    ("LOG_LEVEL", "INFO"),
+    (
+        "LOG_FORMAT",
+        '%(asctime)s - [%(process)d] %(name)s - %(levelname)s - %(message)s'
+    ),
+    (
+        "ZIPFILE_MAX_UNCOMPRESSED_SIZE",
+        constants.DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE
+    ),
+))
+def test_defaults(key, expected):
+    """Test if defaults are properly propagated to app config"""
+
+    class ConfClass:
+        SECRET_KEY = "secret"
+
+    app = Flask('test_app')
+    app.config.from_object(ConfClass)
+    conf = Config(ConfClass)
+    conf.set_app_defaults(app)
+
+    assert app.config[key] == expected, "failed for key '{}'".format(key)
 
 
 def test_log_level_debug():

@@ -14,10 +14,8 @@ class DefaultConfig:
 
     # generate your own random secret key
     SECRET_KEY = 'meCscKSC0bw8q+Ent0F'
-
     DEBUG = False
     TESTING = False
-    ZIPFILE_MAX_UNCOMPRESSED_SIZE = constants.DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE
     MAX_CONTENT_LENGTH = constants.DEFAULT_MAX_CONTENT_LENGTH
 
 
@@ -63,6 +61,7 @@ def init_config(app):
 
     conf = Config(config_section_obj)
     app.config.from_object(config_section_obj)
+    conf.set_app_defaults(app)
     return conf
 
 
@@ -116,12 +115,30 @@ class Config(object):
             # set item (lower key)
             self.set_item(key.lower(), getattr(conf_section_obj, key))
 
+    def set_app_defaults(self, app):
+        """
+        Set app config keys with defaults if key is unset in app config
+
+        :param app: Flask application
+        """
+        for key, values in self._defaults.items():
+            if 'default' not in values:
+                continue
+            # Flask uses uppercase keys
+            upper_key = key.upper()
+
+            if upper_key in app.config:
+                # already defined in app config
+                continue
+
+            app.config[upper_key] = getattr(self, key)
+
     def set_item(self, key, value):
         """
         Set value for configuration item. Creates the self._key = value
         attribute and self.key property to set/get/del the attribute.
         """
-        if key == 'set_item' or key.startswith('_'):
+        if key in ('set_item', 'set_app_defaults') or key.startswith('_'):
             raise Exception("Configuration item's name is not allowed: %s" % key)
 
         # Create the empty self._key attribute, so we can assign to it.
