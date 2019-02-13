@@ -101,10 +101,7 @@ def push_zipfile(organization, repo):
     }
 
     with TemporaryDirectory() as tmpdir:
-        max_size = current_app.config.get(
-            'ZIPFILE_MAX_UNCOMPRESSED_SIZE',
-            DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE
-        )
+        max_size = current_app.config['ZIPFILE_MAX_UNCOMPRESSED_SIZE']
         extract_zip_file(request, tmpdir,
                          max_uncompressed_size=max_size)
         data['extracted_files'] = os.listdir(tmpdir)
