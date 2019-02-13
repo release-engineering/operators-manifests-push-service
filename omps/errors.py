@@ -50,10 +50,10 @@ def init_errors_handling(app):
     def validationerror_error(e):
         """Flask error handler for ValueError exceptions"""
         app.logger.exception('Bad Request: %s', e)
-        return json_error(400, 'Bad Request', str(e))
+        return json_error(400, 'BadRequest', str(e))
 
     @app.errorhandler(Exception)
     def internal_server_error(e):
         """Flask error handler for RuntimeError exceptions"""
         app.logger.exception('Internal server error: %s', e)
-        return json_error(500, 'Internal Server Error', str(e))
+        return json_error(500, 'InternalServerError', str(e))
