@@ -8,23 +8,24 @@ from io import BytesIO
 import pytest
 
 
-def test_push_zipfile(client, valid_manifests_archive):
+def test_push_zipfile(client, valid_manifests_archive, endpoint_push_zipfile):
     """Test REST API for pushing operators form zipfile"""
     with open(valid_manifests_archive, 'rb') as f:
         data = {
             'file': (f, f.name),
         }
         rv = client.post(
-            '/push/organization-X/repo-Y/zipfile',
+            endpoint_push_zipfile.url_path,
             data=data,
             content_type='multipart/form-data',
         )
 
     assert rv.status_code == 200, rv.get_json()
     expected = {
-        'organization': 'organization-X',
-        'repo': 'repo-Y',
+        'organization': endpoint_push_zipfile.org,
+        'repo': endpoint_push_zipfile.repo,
         'msg': 'Not Implemented. Testing only',
+        'version': endpoint_push_zipfile.version or '0.0.1',
         'extracted_files': ['empty.yml'],
     }
     assert rv.get_json() == expected
@@ -34,13 +35,13 @@ def test_push_zipfile(client, valid_manifests_archive):
     'test.json',  # test invalid extension
     'test.zip',  # test invalid content
 ))
-def test_push_zipfile_invalid_file(client, filename):
+def test_push_zipfile_invalid_file(client, filename, endpoint_push_zipfile):
     """Test if proper error is returned when no zip file is being attached"""
     data = {
         'file': (BytesIO(b'randombytes'), filename),
     }
     rv = client.post(
-        '/push/organization-X/repo-Y/zipfile',
+        endpoint_push_zipfile.url_path,
         data=data,
         content_type='multipart/form-data',
     )
@@ -51,9 +52,9 @@ def test_push_zipfile_invalid_file(client, filename):
     assert rv_json['error'] == 'OMPSUploadedFileError'
 
 
-def test_push_zipfile_no_file(client):
+def test_push_zipfile_no_file(client, endpoint_push_zipfile):
     """Test if proper error is returned when no file is being attached"""
-    rv = client.post('/push/organization-X/repo-Y/zipfile')
+    rv = client.post(endpoint_push_zipfile.url_path)
     assert rv.status_code == 400, rv.get_json()
     rv_json = rv.get_json()
     assert rv_json['status'] == 400
@@ -75,6 +76,7 @@ def test_push_koji_nvr(client):
 
 @pytest.mark.parametrize('endpoint', [
     '/push/organization-X/repo-Y/zipfile',
+    '/push/organization-X/repo-Y/zipfile/1.0.1',
     '/push/organization-X/repo-Y/koji/nvr-Z',
 ])
 @pytest.mark.parametrize('method', [
@@ -94,7 +96,7 @@ def test_method_not_allowed(client, endpoint, method):
     '/',
     '/push',
     '/push/organization-X/repo-Y/koji/',
-    '/push/organization-X/repo-Y/zipfile/extra-something',
+    '/push/organization-X/repo-Y/zipfile/version-Z/extra-something',
 ])
 def test_404_for_mistyped_entrypoints(client, endpoint):
     """Test if HTTP 404 is returned for unexpected endpoints"""

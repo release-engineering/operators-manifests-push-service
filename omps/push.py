@@ -12,6 +12,7 @@ from flask import Blueprint, jsonify, current_app, request
 from .constants import (
     ALLOWED_EXTENSIONS,
     DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE,
+    DEFAULT_RELEASE_VERSION,
 )
 from .errors import OMPSUploadedFileError, OMPSExpectedFileError
 
@@ -86,17 +87,20 @@ def extract_zip_file(
         archive.close()
 
 
-@BLUEPRINT.route("/<organization>/<repo>/zipfile", methods=('POST',))
-def push_zipfile(organization, repo):
+@BLUEPRINT.route("/<organization>/<repo>/zipfile/<version>", methods=('POST',))
+def push_zipfile_with_version(organization, repo, version):
     """
-    Push operator manifest to registry from uploaded zipfile
+    Push the particular version of operator manifest to registry from
+    the uploaded zipfile
 
     :param organization: quay.io organization
     :param repo: target repository
+    :param version: version of operator manifest
     """
     data = {
         'organization': organization,
         'repo': repo,
+        'version': version,
         'msg': 'Not Implemented. Testing only'
     }
 
@@ -108,6 +112,18 @@ def push_zipfile(organization, repo):
     resp = jsonify(data)
     resp.status_code = 200
     return resp
+
+
+@BLUEPRINT.route("/<organization>/<repo>/zipfile", methods=('POST',))
+def push_zipfile(organization, repo):
+    """
+    Push operator manifest to registry from uploaded zipfile
+
+    :param organization: quay.io organization
+    :param repo: target repository
+    """
+    version = DEFAULT_RELEASE_VERSION
+    return push_zipfile_with_version(organization, repo, version)
 
 
 @BLUEPRINT.route("/<organization>/<repo>/koji/<nvr>", methods=('POST',))
