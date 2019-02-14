@@ -3,6 +3,7 @@
 # see the LICENSE file for license
 #
 
+from collections import namedtuple
 import os
 import shutil
 import zipfile
@@ -10,6 +11,9 @@ import zipfile
 import pytest
 
 from omps.app import app
+
+
+EntrypointMeta = namedtuple('EntrypointMeta', 'url_path,org,repo,version')
 
 
 @pytest.fixture
@@ -46,3 +50,23 @@ def valid_manifests_archive(datadir, tmpdir):
             arcname='empty.yml')
 
     return path
+
+
+@pytest.fixture(params=[
+    True,  # endpoint with version
+    False,  # endpoint without version
+])
+def endpoint_push_zipfile(request):
+    """Returns URL for zipfile endpoints"""
+    organization = 'organization-X'
+    repo = 'repo-Y'
+    version = '0.0.1' if request.param else None
+
+    url_path = '/push/{}/{}/zipfile'.format(organization, repo)
+    if version:
+        url_path = '{}/{}'.format(url_path, version)
+
+    yield EntrypointMeta(
+        url_path=url_path, org=organization,
+        repo=repo, version=version
+    )
