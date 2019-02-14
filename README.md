@@ -17,6 +17,7 @@ class ProdConfig:
     SECRET_KEY = "123456789secretkeyvalue"
     LOG_LEVEL = "INFO"
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    DEFAULT_RELEASE_VERSION = "0.0.1"  # default operator manifest version
 ```
 
 ## Running service
@@ -48,7 +49,7 @@ field `file`. See `curl` examples bellow.
 
 If `<version>` is omitted:
 * the latest release version will be incremented and used [not implemented]
-* for new repository a default initial version will be used
+* for new repository a default initial version will be used (`DEFAULT_RELEASE_VERSION` config option)
 
 #### Replies
 

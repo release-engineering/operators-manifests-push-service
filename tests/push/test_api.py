@@ -7,6 +7,8 @@ from io import BytesIO
 
 import pytest
 
+from omps import constants
+
 
 def test_push_zipfile(client, valid_manifests_archive, endpoint_push_zipfile):
     """Test REST API for pushing operators form zipfile"""
@@ -25,7 +27,7 @@ def test_push_zipfile(client, valid_manifests_archive, endpoint_push_zipfile):
         'organization': endpoint_push_zipfile.org,
         'repo': endpoint_push_zipfile.repo,
         'msg': 'Not Implemented. Testing only',
-        'version': endpoint_push_zipfile.version or '0.0.1',
+        'version': endpoint_push_zipfile.version or constants.DEFAULT_RELEASE_VERSION,
         'extracted_files': ['empty.yml'],
     }
     assert rv.get_json() == expected

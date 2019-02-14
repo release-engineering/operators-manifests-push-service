@@ -95,6 +95,11 @@ class Config(object):
             'default': constants.DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE,
             'desc': 'Max size of uncompressed archive to be accepted',
         },
+        'default_release_version': {
+            'type': str,
+            'default': constants.DEFAULT_RELEASE_VERSION,
+            'desc': 'Default release version for new operator manifests releases'
+        },
     }
 
     def __init__(self, conf_section_obj):
@@ -195,3 +200,9 @@ class Config(object):
         if s <= 0:
             raise ValueError("Must be positive number")
         self._zipfile_max_uncompressed_size = s
+
+    def _setifok_default_release_version(self, s):
+        if len(s.split('.')) != 3:
+            raise ValueError(
+                "default_release_version must be in format 'x.y.z'")
+        self._default_release_version = s
