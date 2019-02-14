@@ -3,6 +3,8 @@
 # see the LICENSE file for license
 #
 
+from io import BytesIO
+
 import pytest
 
 
@@ -26,6 +28,36 @@ def test_push_zipfile(client, valid_manifests_archive):
         'extracted_files': ['empty.yml'],
     }
     assert rv.get_json() == expected
+
+
+@pytest.mark.parametrize('filename', (
+    'test.json',  # test invalid extension
+    'test.zip',  # test invalid content
+))
+def test_push_zipfile_invalid_file(client, filename):
+    """Test if proper error is returned when no zip file is being attached"""
+    data = {
+        'file': (BytesIO(b'randombytes'), filename),
+    }
+    rv = client.post(
+        '/push/organization-X/repo-Y/zipfile',
+        data=data,
+        content_type='multipart/form-data',
+    )
+
+    assert rv.status_code == 400, rv.get_json()
+    rv_json = rv.get_json()
+    assert rv_json['status'] == 400
+    assert rv_json['error'] == 'OMPSUploadedFileError'
+
+
+def test_push_zipfile_no_file(client):
+    """Test if proper error is returned when no file is being attached"""
+    rv = client.post('/push/organization-X/repo-Y/zipfile')
+    assert rv.status_code == 400, rv.get_json()
+    rv_json = rv.get_json()
+    assert rv_json['status'] == 400
+    assert rv_json['error'] == 'OMPSExpectedFileError'
 
 
 def test_push_koji_nvr(client):
