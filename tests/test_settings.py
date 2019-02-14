@@ -22,6 +22,10 @@ from omps.settings import Config, DefaultConfig
         "ZIPFILE_MAX_UNCOMPRESSED_SIZE",
         constants.DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE
     ),
+    (
+        "DEFAULT_RELEASE_VERSION",
+        constants.DEFAULT_RELEASE_VERSION,
+    ),
 ))
 def test_defaults(key, expected):
     """Test if defaults are properly propagated to app config"""

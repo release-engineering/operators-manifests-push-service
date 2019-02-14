@@ -122,7 +122,7 @@ def push_zipfile(organization, repo):
     :param organization: quay.io organization
     :param repo: target repository
     """
-    version = DEFAULT_RELEASE_VERSION
+    version = current_app.config['DEFAULT_RELEASE_VERSION']
     return push_zipfile_with_version(organization, repo, version)
 
 
