@@ -26,6 +26,7 @@ from omps.settings import Config, DefaultConfig
         "DEFAULT_RELEASE_VERSION",
         constants.DEFAULT_RELEASE_VERSION,
     ),
+    ("QUAY_ORGANIZATIONS", {}),
 ))
 def test_defaults(key, expected):
     """Test if defaults are properly propagated to app config"""
@@ -93,6 +94,38 @@ def test_zipfile_max_uncompressed_size_invalid():
 
     class ConfClass(DefaultConfig):
         ZIPFILE_MAX_UNCOMPRESSED_SIZE = -10
+
+    with pytest.raises(ValueError):
+        Config(ConfClass)
+
+
+def test_quay_organizations():
+    """Test of setting quay_organizations"""
+    expected = {
+        "testorg": {
+            "username": "testuser",
+            "password": "testpwd",
+        }
+    }
+
+    class ConfClass(DefaultConfig):
+        QUAY_ORGANIZATIONS = expected
+
+    conf = Config(ConfClass)
+    assert conf._quay_organizations == expected
+
+
+@pytest.mark.parametrize('org_conf', [
+    {'org': 'string'},
+    {'-wrong/org': {'username': 'u', 'password': 'p'}},
+    {'org': {'username': 'missing password'}},
+    {'org': {'password': 'missing username'}},
+    {'org': {'username': True, 'password': 'p'}},
+])
+def test_quay_organizations_invalid(org_conf):
+    """Test invalid quay_organizations config"""
+    class ConfClass(DefaultConfig):
+        QUAY_ORGANIZATIONS = org_conf
 
     with pytest.raises(ValueError):
         Config(ConfClass)
