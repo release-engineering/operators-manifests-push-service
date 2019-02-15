@@ -9,6 +9,7 @@ import shutil
 import zipfile
 
 import pytest
+import requests_mock
 
 from omps.app import app
 
@@ -58,7 +59,7 @@ def valid_manifests_archive(datadir, tmpdir):
 ])
 def endpoint_push_zipfile(request):
     """Returns URL for zipfile endpoints"""
-    organization = 'organization-X'
+    organization = 'testorg'
     repo = 'repo-Y'
     version = '0.0.1' if request.param else None
 
@@ -70,3 +71,32 @@ def endpoint_push_zipfile(request):
         url_path=url_path, org=organization,
         repo=repo, version=version
     )
+
+
+@pytest.fixture
+def mocked_quay_login():
+    """Returns JSON with token"""
+    with requests_mock.Mocker() as m:
+        m.post(
+            'https://quay.io/cnr/api/v1/users/login',
+            json={'token': 'faketoken'}
+        )
+        yield m
+
+
+@pytest.fixture
+def mocked_failed_quay_login():
+    """Returns HTTP 401 with error message"""
+    with requests_mock.Mocker() as m:
+        m.post(
+            'https://quay.io/cnr/api/v1/users/login',
+            json={
+                "error": {
+                    "code": "unauthorized-access",
+                    "details": {},
+                    "message": "Invalid Username or Password"
+                }
+            },
+            status_code=401,
+        )
+        yield m

@@ -37,8 +37,12 @@ setup(
     install_requires=[
         'Flask==1.0.*',
         'jsonschema',
+        'requests',
     ],
     extras_require={
-        'test': ['pytest'],
+        'test': [
+            'pytest',
+            'requests-mock',
+        ],
     },
 )
