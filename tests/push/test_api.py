@@ -10,7 +10,9 @@ import pytest
 from omps import constants
 
 
-def test_push_zipfile(client, valid_manifests_archive, endpoint_push_zipfile):
+def test_push_zipfile(
+        client, valid_manifests_archive, endpoint_push_zipfile,
+        mocked_quay_login, mocked_op_courier_push):
     """Test REST API for pushing operators form zipfile"""
     with open(valid_manifests_archive, 'rb') as f:
         data = {
@@ -37,7 +39,9 @@ def test_push_zipfile(client, valid_manifests_archive, endpoint_push_zipfile):
     'test.json',  # test invalid extension
     'test.zip',  # test invalid content
 ))
-def test_push_zipfile_invalid_file(client, filename, endpoint_push_zipfile):
+def test_push_zipfile_invalid_file(
+        client, filename, endpoint_push_zipfile,
+        mocked_quay_login):
     """Test if proper error is returned when no zip file is being attached"""
     data = {
         'file': (BytesIO(b'randombytes'), filename),
@@ -54,7 +58,7 @@ def test_push_zipfile_invalid_file(client, filename, endpoint_push_zipfile):
     assert rv_json['error'] == 'OMPSUploadedFileError'
 
 
-def test_push_zipfile_no_file(client, endpoint_push_zipfile):
+def test_push_zipfile_no_file(client, endpoint_push_zipfile, mocked_quay_login):
     """Test if proper error is returned when no file is being attached"""
     rv = client.post(endpoint_push_zipfile.url_path)
     assert rv.status_code == 400, rv.get_json()

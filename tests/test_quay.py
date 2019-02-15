@@ -3,6 +3,8 @@
 # see the LICENSE file for license
 #
 
+from flexmock import flexmock
+import operatorcourier.api
 import pytest
 
 from omps.errors import OMPSOrganizationNotFound, QuayLoginError
@@ -38,3 +40,18 @@ class TestQuayOrganizationManager:
         qom.init_from_config(conf)
         with pytest.raises(QuayLoginError):
             qom.organization_login('testorg')
+
+
+class TestQuayOrganization:
+    """Tests for QuayOrganization class"""
+
+    def test_push_operator_manifest(self, mocked_op_courier_push):
+        """Test for pushing operator manifest"""
+        org = "org"
+        token = "token"
+        repo = "repo"
+        version = "0.0.1"
+        source_dir = "/not/important/dir"
+
+        qo = QuayOrganization(org, token)
+        qo.push_operator_manifest(repo, version, source_dir)

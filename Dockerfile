@@ -13,6 +13,7 @@ RUN dnf -y install \
     python3-flask \
     python3-jsonschema \
     python3-requests \
+    https://kojipkgs.fedoraproject.org//packages/python-operator-courier/1.0.0/1.fc29/noarch/python3-operator-courier-1.0.0-1.fc29.noarch.rpm \
     && dnf -y clean all \
     && rm -rf /tmp/*
 
