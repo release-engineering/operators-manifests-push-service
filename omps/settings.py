@@ -7,6 +7,8 @@ import imp
 import os
 import sys
 
+import jsonschema
+
 from . import constants
 
 
@@ -29,6 +31,12 @@ class DevConfig(DefaultConfig):
 
 class TestConfig(DefaultConfig):
     TESTING = True
+    QUAY_ORGANIZATIONS = {
+        "testorg": {
+            "username": "testuser",
+            "password": "test_passwd",
+        }
+    }
 
 
 def init_config(app):
@@ -100,6 +108,36 @@ class Config(object):
             'default': constants.DEFAULT_RELEASE_VERSION,
             'desc': 'Default release version for new operator manifests releases'
         },
+        'quay_organizations': {
+            'type': dict,
+            'default': {},
+            'desc': 'Configuration of quay organizations'
+        }
+    }
+
+    SCHEMA_ORGANIZATIONS = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Configuration for accessing Quay.io organizations",
+        "type": ["object"],
+        "patternProperties": {
+            "^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}": {
+                "description": "Organization name",
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "description": "quay.io username",
+                        "type": "string",
+                    },
+                    "password": {
+                        "description": "quay.io password",
+                        "type": "string",
+                    },
+                },
+                "required": ['username', 'password'],
+            },
+        },
+        "uniqueItems": True,
+        "additionalProperties": False,
     }
 
     def __init__(self, conf_section_obj):
@@ -206,3 +244,10 @@ class Config(object):
             raise ValueError(
                 "default_release_version must be in format 'x.y.z'")
         self._default_release_version = s
+
+    def _setifok_quay_organizations(self, s):
+        try:
+            jsonschema.validate(s, self.SCHEMA_ORGANIZATIONS)
+        except jsonschema.ValidationError as e:
+            raise ValueError("config quay_organizations: {}".format(e))
+        self._quay_organizations = s

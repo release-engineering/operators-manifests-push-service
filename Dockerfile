@@ -11,6 +11,7 @@ WORKDIR /src
 RUN dnf -y install \
     python3-gunicorn \
     python3-flask \
+    python3-jsonschema \
     && dnf -y clean all \
     && rm -rf /tmp/*
 
