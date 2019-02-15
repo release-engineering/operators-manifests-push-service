@@ -15,6 +15,7 @@ from .constants import (
     DEFAULT_RELEASE_VERSION,
 )
 from .errors import OMPSUploadedFileError, OMPSExpectedFileError
+from .quay import QUAY_ORG_MANAGER
 
 logger = logging.getLogger(__name__)
 BLUEPRINT = Blueprint('push', __name__)
@@ -104,11 +105,18 @@ def push_zipfile_with_version(organization, repo, version):
         'msg': 'Not Implemented. Testing only'
     }
 
+    quay_org = QUAY_ORG_MANAGER.organization_login(organization)
+
     with TemporaryDirectory() as tmpdir:
         max_size = current_app.config['ZIPFILE_MAX_UNCOMPRESSED_SIZE']
         extract_zip_file(request, tmpdir,
                          max_uncompressed_size=max_size)
-        data['extracted_files'] = os.listdir(tmpdir)
+        extracted_files = os.listdir(tmpdir)
+        logger.info("Extracted files: %s", extracted_files)
+        data['extracted_files'] = extracted_files
+
+        quay_org.push_operator_manifest(repo, version, tmpdir)
+
     resp = jsonify(data)
     resp.status_code = 200
     return resp

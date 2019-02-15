@@ -34,6 +34,11 @@ class QuayLoginError(OMPSError):
     code = 500
 
 
+class QuayCourierError(OMPSError):
+    """Operator-courier library failures"""
+    code = 500
+
+
 def json_error(status, error, message):
     response = jsonify(
         {'status': status,

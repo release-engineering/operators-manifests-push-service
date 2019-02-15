@@ -8,10 +8,13 @@ import os
 import shutil
 import zipfile
 
+from flexmock import flexmock
+import operatorcourier.api
 import pytest
 import requests_mock
 
 from omps.app import app
+
 
 
 EntrypointMeta = namedtuple('EntrypointMeta', 'url_path,org,repo,version')
@@ -100,3 +103,14 @@ def mocked_failed_quay_login():
             status_code=401,
         )
         yield m
+
+
+@pytest.fixture
+def mocked_op_courier_push():
+    """Do not execute operator-courier push operation"""
+    orig = operatorcourier.api.build_verify_and_push
+    try:
+        operatorcourier.api.build_verify_and_push = flexmock()
+        yield
+    finally:
+        operatorcourier.api.build_verify_and_push = orig

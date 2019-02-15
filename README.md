@@ -85,6 +85,7 @@ Error messages have following format:
 |400| OMPSExpectedFileError | Expected file hasn't been attached |
 |404| OMPSOrganizationNotFound | Requested organization is not configured on server side |
 |500| QuayLoginError | Server cannot login to quay, probably misconfiguration |
+|500| QuayCourierError | operator-courier module raised exception during building and pushing manifests to quay|
 
 #### Example
 ```bash

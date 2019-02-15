@@ -8,10 +8,12 @@ import logging
 
 import jsonschema
 import requests
+from operatorcourier import api as courier_api
 
 from .errors import (
     QuayLoginError,
     OMPSOrganizationNotFound,
+    QuayCourierError,
 )
 
 logger = logging.getLogger(__name__)
@@ -119,6 +121,18 @@ class QuayOrganization:
         """
         self._organization = organization
         self._token = token
+
+    def push_operator_manifest(self, repo, version, source_dir):
+        try:
+            courier_api.build_verify_and_push(
+                self._organization, repo, version, self._token,
+                source_dir=source_dir
+            )
+        except Exception as e:
+            logger.error(
+                "push_operator_manifest: Operator courier call failed: %s", e
+            )
+            raise QuayCourierError("Failed to push manifest: {}".format(e))
 
 
 QUAY_ORG_MANAGER = QuayOrganizationManager()

@@ -38,11 +38,13 @@ setup(
         'Flask==1.0.*',
         'jsonschema',
         'requests',
+        'operator-courier',
     ],
     extras_require={
         'test': [
             'pytest',
             'requests-mock',
+            'flexmock',
         ],
     },
 )
