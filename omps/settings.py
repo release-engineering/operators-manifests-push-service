@@ -10,6 +10,7 @@ import sys
 import jsonschema
 
 from . import constants
+from .quay import QuayOrganizationManager
 
 
 class DefaultConfig:
@@ -115,30 +116,7 @@ class Config(object):
         }
     }
 
-    SCHEMA_ORGANIZATIONS = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "Configuration for accessing Quay.io organizations",
-        "type": ["object"],
-        "patternProperties": {
-            "^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}": {
-                "description": "Organization name",
-                "type": "object",
-                "properties": {
-                    "username": {
-                        "description": "quay.io username",
-                        "type": "string",
-                    },
-                    "password": {
-                        "description": "quay.io password",
-                        "type": "string",
-                    },
-                },
-                "required": ['username', 'password'],
-            },
-        },
-        "uniqueItems": True,
-        "additionalProperties": False,
-    }
+
 
     def __init__(self, conf_section_obj):
         """
@@ -247,7 +225,7 @@ class Config(object):
 
     def _setifok_quay_organizations(self, s):
         try:
-            jsonschema.validate(s, self.SCHEMA_ORGANIZATIONS)
+            QuayOrganizationManager.validate_config(s)
         except jsonschema.ValidationError as e:
             raise ValueError("config quay_organizations: {}".format(e))
         self._quay_organizations = s

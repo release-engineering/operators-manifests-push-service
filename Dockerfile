@@ -12,6 +12,7 @@ RUN dnf -y install \
     python3-gunicorn \
     python3-flask \
     python3-jsonschema \
+    python3-requests \
     && dnf -y clean all \
     && rm -rf /tmp/*
 

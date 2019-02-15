@@ -24,6 +24,16 @@ class OMPSExpectedFileError(OMPSError):
     code = 400
 
 
+class OMPSOrganizationNotFound(OMPSError):
+    """Requested organization cannot be accessed"""
+    code = 404
+
+
+class QuayLoginError(OMPSError):
+    """Login to quay.io failed"""
+    code = 500
+
+
 def json_error(status, error, message):
     response = jsonify(
         {'status': status,

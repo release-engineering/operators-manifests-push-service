@@ -11,6 +11,7 @@ from .errors import init_errors_handling
 from .logger import init_logging
 from .push import BLUEPRINT as PUSH_BP
 from .settings import init_config
+from .quay import QUAY_ORG_MANAGER
 
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ def _load_config(app):
     conf = init_config(app)
     init_logging(conf)
     logger.debug('Config loaded. Logging initialized')
+    QUAY_ORG_MANAGER.init_from_config(conf)
 
 
 def _init_errors_handling(app):
