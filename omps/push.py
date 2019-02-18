@@ -12,10 +12,14 @@ from flask import Blueprint, jsonify, current_app, request
 from .constants import (
     ALLOWED_EXTENSIONS,
     DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE,
-    DEFAULT_RELEASE_VERSION,
 )
-from .errors import OMPSUploadedFileError, OMPSExpectedFileError
-from .quay import QUAY_ORG_MANAGER
+from .errors import (
+    OMPSInvalidVersionFormat,
+    OMPSUploadedFileError,
+    OMPSExpectedFileError,
+    QuayPackageNotFound,
+)
+from .quay import QUAY_ORG_MANAGER, ReleaseVersion
 
 logger = logging.getLogger(__name__)
 BLUEPRINT = Blueprint('push', __name__)
@@ -88,8 +92,25 @@ def extract_zip_file(
         archive.close()
 
 
+def _get_package_version(quay_org, repo, version=None):
+    if version is None:
+        try:
+            latest_ver = quay_org.get_latest_release_version(repo)
+        except QuayPackageNotFound:
+            version = current_app.config['DEFAULT_RELEASE_VERSION']
+        else:
+            latest_ver.increment()
+            version = str(latest_ver)
+    else:
+        try:
+            ReleaseVersion.validate_version(version)
+        except ValueError as e:
+            raise OMPSInvalidVersionFormat(str(e))
+    return version
+
+
 @BLUEPRINT.route("/<organization>/<repo>/zipfile/<version>", methods=('POST',))
-def push_zipfile_with_version(organization, repo, version):
+def push_zipfile_with_version(organization, repo, version=None):
     """
     Push the particular version of operator manifest to registry from
     the uploaded zipfile
@@ -98,14 +119,16 @@ def push_zipfile_with_version(organization, repo, version):
     :param repo: target repository
     :param version: version of operator manifest
     """
+    quay_org = QUAY_ORG_MANAGER.organization_login(organization)
+
+    version = _get_package_version(quay_org, repo, version)
+    logger.info("Using release version: %s", version)
+
     data = {
         'organization': organization,
         'repo': repo,
         'version': version,
-        'msg': 'Not Implemented. Testing only'
     }
-
-    quay_org = QUAY_ORG_MANAGER.organization_login(organization)
 
     with TemporaryDirectory() as tmpdir:
         max_size = current_app.config['ZIPFILE_MAX_UNCOMPRESSED_SIZE']
@@ -130,8 +153,7 @@ def push_zipfile(organization, repo):
     :param organization: quay.io organization
     :param repo: target repository
     """
-    version = current_app.config['DEFAULT_RELEASE_VERSION']
-    return push_zipfile_with_version(organization, repo, version)
+    return push_zipfile_with_version(organization, repo, None)
 
 
 @BLUEPRINT.route("/<organization>/<repo>/koji/<nvr>", methods=('POST',))

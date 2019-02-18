@@ -4,6 +4,7 @@
 #
 
 """Module related to quay operations"""
+from functools import total_ordering
 import logging
 
 import jsonschema
@@ -14,9 +15,93 @@ from .errors import (
     QuayLoginError,
     OMPSOrganizationNotFound,
     QuayCourierError,
+    QuayPackageNotFound,
+    QuayPackageError,
 )
 
 logger = logging.getLogger(__name__)
+
+
+@total_ordering
+class ReleaseVersion:
+    """Quay package version"""
+
+    @classmethod
+    def validate_version(cls, version):
+        """Quay requires version format 'x.y.z' (example: 1.5.1-6)
+
+        Due release autoincrement feature in OMPS lets make it stricter and
+        support only "<int>.<int>.<int>"
+
+        :param str version: release version
+        :raises: ValueError when version doesn't follow required format
+        """
+        def _raise(msg):
+            raise ValueError(
+                "Version '{}' must be in format '<int>.<int>.<int>': {}".format(
+                    version, msg
+                ))
+
+        parts = version.split('.')
+        if len(parts) != 3:
+            _raise("version must consist of 3 parts separated by '.'")
+
+        for part in parts:
+            try:
+                value = int(part)
+            except ValueError:
+                _raise("'{}' cannot be converted to integer".format(part))
+            else:
+                if value < 0:
+                    _raise("integer '{}' must be >=0".format(value))
+
+    @classmethod
+    def from_str(cls, version):
+        """Create version object from string
+
+        :param str version: release version
+        :raises: ValueError when version doesn't follow required format
+        :return: version object
+        :rtype: ReleaseVersion
+        """
+        cls.validate_version(version)
+        x, y, z = version.split('.')
+        return cls(int(x), int(y), int(z))
+
+    def __init__(self, x, y, z):
+        assert isinstance(x, int)
+        assert isinstance(y, int)
+        assert isinstance(z, int)
+        self._x = x
+        self._y = y
+        self._z = z
+
+    @property
+    def version_tuple(self):
+        return self._x, self._y, self._z
+
+    def _is_valid_operand(self, other):
+        return hasattr(other, 'version_tuple')
+
+    def __eq__(self, other):
+        if not self._is_valid_operand(other):
+            return NotImplemented
+        return self.version_tuple == other.version_tuple
+
+    def __lt__(self, other):
+        if not self._is_valid_operand(other):
+            return NotImplemented
+        return self.version_tuple < other.version_tuple
+
+    def __str__(self):
+        return '{}.{}.{}'.format(self._x, self._y, self._z)
+
+    def increment(self):
+        """Increments the most significant part of version by 1, zeroing
+        other positions"""
+        self._x += 1
+        self._y = 0
+        self._z = 0
 
 
 class QuayOrganizationManager:
@@ -119,6 +204,7 @@ class QuayOrganization:
         :param organization: organization name
         :param token: organization login token
         """
+        self._quay_url = "https://quay.io"
         self._organization = organization
         self._token = token
 
@@ -133,6 +219,72 @@ class QuayOrganization:
                 "push_operator_manifest: Operator courier call failed: %s", e
             )
             raise QuayCourierError("Failed to push manifest: {}".format(e))
+
+    def _get_repo_content(self, repo):
+        """Return content of repository"""
+        endpoint = '/cnr/api/v1/packages/'
+        url = '{q}{e}{o}/{r}'.format(
+            q=self._quay_url,
+            e=endpoint,
+            o=self._organization,
+            r=repo,
+        )
+        headers = {'Authorization': self._token}
+        res = requests.get(url, headers=headers)
+
+        res.raise_for_status()
+        return res.json()
+
+    def get_latest_release_version(self, repo):
+        """Get the latest release version
+
+        :param repo: repository name
+        :raise QuayPackageNotFound: package doesn't exist
+        :raise QuayPackageError: failed to retrieve info about package
+        :return: Latest release version
+        :rtype: PackageRelease
+        """
+        def _raise(exc):
+            raise QuayPackageError(
+                "Cannot retrieve information about package {}/{}: {}".format(
+                    self._organization, repo, exc
+                ))
+
+        try:
+            res = self._get_repo_content(repo)
+        except requests.exceptions.HTTPError as http_e:
+            if http_e.response.status_code == 404:
+                raise QuayPackageNotFound(
+                    "Package {}/{} not found".format(
+                        self._organization, repo
+                    )
+                )
+            _raise(http_e)
+        except requests.exceptions.RequestException as e:
+            _raise(e)
+
+        releases = []
+        for package in res:
+            release = package['release']
+            try:
+                version = ReleaseVersion.from_str(release)
+            except ValueError as e:
+                # ignore incorrect versions
+                logger.debug("Ignoring version: %s: %s", release, e)
+                continue
+            else:
+                releases.append(version)
+
+        if not releases:
+            # no valid versions found, assume that this will be first package
+            # uploaded by service
+            raise QuayPackageNotFound(
+                    "Package {}/{} has not valid versions uploaded".format(
+                        self._organization, repo
+                    )
+                )
+
+        return max(releases)
 
 
 QUAY_ORG_MANAGER = QuayOrganizationManager()

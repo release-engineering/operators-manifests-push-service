@@ -4,6 +4,7 @@
 #
 
 from collections import namedtuple
+import re
 import os
 import shutil
 import zipfile
@@ -14,6 +15,8 @@ import pytest
 import requests_mock
 
 from omps.app import app
+from omps.errors import QuayPackageNotFound
+from omps.quay import QuayOrganization
 
 
 
@@ -77,12 +80,16 @@ def endpoint_push_zipfile(request):
 
 
 @pytest.fixture
-def mocked_quay_login():
-    """Returns JSON with token"""
+def mocked_quay_io():
+    """Mocking quay.io answers"""
     with requests_mock.Mocker() as m:
         m.post(
-            'https://quay.io/cnr/api/v1/users/login',
+            '/cnr/api/v1/users/login',
             json={'token': 'faketoken'}
+        )
+        m.get(
+            re.compile(r'/cnr/api/v1/packages/.*'),
+            status_code=404,
         )
         yield m
 
