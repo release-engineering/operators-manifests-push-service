@@ -15,7 +15,7 @@ from omps.settings import TestConfig, Config
 class TestQuayOrganizationManager:
     """Tests for QuayOrganizationManager class"""
 
-    def test_organization_login(self, mocked_quay_login):
+    def test_organization_login(self, mocked_quay_io):
         """Test successful org login"""
         qom = QuayOrganizationManager()
         conf = Config(TestConfig)
@@ -24,7 +24,7 @@ class TestQuayOrganizationManager:
         org = qom.organization_login('testorg')
         assert isinstance(org, QuayOrganization)
 
-    def test_organization_login_org_not_found(self, mocked_quay_login):
+    def test_organization_login_org_not_found(self, mocked_quay_io):
         """Test login to not configured org"""
         qom = QuayOrganizationManager()
         conf = Config(TestConfig)

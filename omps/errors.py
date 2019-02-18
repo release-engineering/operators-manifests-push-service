@@ -39,6 +39,21 @@ class QuayCourierError(OMPSError):
     code = 500
 
 
+class QuayPackageError(OMPSError):
+    """Error during getting package information from quay"""
+    code = 500
+
+
+class QuayPackageNotFound(OMPSError):
+    """Requested package doesn't exist"""
+    code = 404
+
+
+class OMPSInvalidVersionFormat(OMPSError):
+    """Invalid version format"""
+    code = 400
+
+
 def json_error(status, error, message):
     response = jsonify(
         {'status': status,

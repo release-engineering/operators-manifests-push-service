@@ -17,7 +17,7 @@ class ProdConfig:
     SECRET_KEY = "123456789secretkeyvalue"
     LOG_LEVEL = "INFO"
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    DEFAULT_RELEASE_VERSION = "0.0.1"  # default operator manifest version
+    DEFAULT_RELEASE_VERSION = "1.0.0"  # default operator manifest version
 ```
 
 ## Running service
@@ -48,8 +48,10 @@ Zip file must be attached as `content_type='multipart/form-data'` assigned to
 field `file`. See `curl` examples bellow.
 
 If `<version>` is omitted:
-* the latest release version will be incremented and used [not implemented]
+* the latest release version will be incremented and used (for example from `2.5.1` to `3.0.0`)
 * for new repository a default initial version will be used (`DEFAULT_RELEASE_VERSION` config option)
+
+`<version>` must be unique for repository. Quay doesn't support overwriting of releases.
 
 #### Replies
 
@@ -86,6 +88,7 @@ Error messages have following format:
 |404| OMPSOrganizationNotFound | Requested organization is not configured on server side |
 |500| QuayLoginError | Server cannot login to quay, probably misconfiguration |
 |500| QuayCourierError | operator-courier module raised exception during building and pushing manifests to quay|
+|500| QuayPackageError | Failed to get information about application packages from quay |
 
 #### Example
 ```bash
