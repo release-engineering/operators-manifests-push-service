@@ -8,8 +8,71 @@ import operatorcourier.api
 import pytest
 
 from omps.errors import OMPSOrganizationNotFound, QuayLoginError
-from omps.quay import QuayOrganizationManager, QuayOrganization
+from omps.quay import QuayOrganizationManager, QuayOrganization, ReleaseVersion
 from omps.settings import TestConfig, Config
+
+
+class TestReleaseVersion:
+    """Tests for ReleaseVersion class"""
+
+    def test_from_str(self):
+        """Test of creating ReleaseVersion object from string"""
+        version = ReleaseVersion.from_str("1.2.3")
+        assert isinstance(version, ReleaseVersion)
+        assert version.version_tuple == (1, 2, 3)
+
+    @pytest.mark.parametrize('value', [
+        "1",
+        "1.2",
+        "1.2.3.4",
+        "nope",
+        "1-5.1.0",
+        "-1.2.3",
+        "a.b.c",
+    ])
+    def test_from_str_invalid(self, value):
+        """Test if error is properly raised for invalid input"""
+        with pytest.raises(ValueError):
+            ReleaseVersion.from_str(value)
+
+    def test_to_str(self):
+        """Test textual representation"""
+        version = ReleaseVersion(1, 2, 3)
+        assert str(version) == "1.2.3"
+
+    @pytest.mark.parametrize('from_version, expected', [
+        ("1.2.3", "2.0.0"),
+        ("1.0.0", "2.0.0"),
+    ])
+    def test_increment(self, from_version, expected):
+        """Test if incrementation of version works as expected"""
+        version = ReleaseVersion.from_str(from_version)
+        version.increment()
+        assert str(version) == expected
+
+    def test_ordering(self):
+        """Test if ordering works as expected"""
+        min_version = ReleaseVersion.from_str("1.0.0")
+        mid_version = ReleaseVersion.from_str("1.2.3")
+        max_version = ReleaseVersion.from_str("2.0.0")
+
+        versions = (max_version, min_version, mid_version)
+
+        assert min_version == min_version
+        assert min_version != max_version
+        assert min_version != mid_version
+        assert min_version < mid_version < max_version
+        assert max_version > mid_version > min_version
+        assert min_version == min(versions)
+        assert max_version == max(versions)
+
+    @pytest.mark.parametrize('value', ["2.0.0", (2, 0, 0), 2])
+    def test_ordering_other_types(self, value):
+        """Test if a proper exception is raised when comparing to unsupported
+        types"""
+        version = ReleaseVersion.from_str("1.0.0")
+        with pytest.raises(TypeError):
+            assert version < value
 
 
 class TestQuayOrganizationManager:

@@ -42,6 +42,8 @@ class ReleaseVersion:
                     version, msg
                 ))
 
+        assert isinstance(version, str)
+
         parts = version.split('.')
         if len(parts) != 3:
             _raise("version must consist of 3 parts separated by '.'")
@@ -95,6 +97,11 @@ class ReleaseVersion:
 
     def __str__(self):
         return '{}.{}.{}'.format(self._x, self._y, self._z)
+
+    def __repr__(self):
+        return "{}({}, {}, {})".format(
+            self.__class__.__name__, self._x, self._y, self._z
+        )
 
     def increment(self):
         """Increments the most significant part of version by 1, zeroing
