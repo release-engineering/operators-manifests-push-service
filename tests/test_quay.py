@@ -3,11 +3,14 @@
 # see the LICENSE file for license
 #
 
-from flexmock import flexmock
-import operatorcourier.api
+import requests_mock
 import pytest
 
-from omps.errors import OMPSOrganizationNotFound, QuayLoginError
+from omps.errors import (
+    OMPSOrganizationNotFound,
+    QuayPackageNotFound,
+    QuayLoginError
+)
 from omps.quay import QuayOrganizationManager, QuayOrganization, ReleaseVersion
 from omps.settings import TestConfig, Config
 
@@ -118,3 +121,37 @@ class TestQuayOrganization:
 
         qo = QuayOrganization(org, token)
         qo.push_operator_manifest(repo, version, source_dir)
+
+    def test_get_latest_release_version(self):
+        """Test getting the latest release version"""
+        org = "test_org"
+        repo = "test_repo"
+
+        with requests_mock.Mocker() as m:
+            m.get(
+                '/cnr/api/v1/packages/{}/{}'.format(org, repo),
+                json=[
+                    {'release': "1.0.0"},
+                    {'release': "1.2.0"},
+                    {'release': "1.0.1"},
+                ]
+            )
+
+            qo = QuayOrganization(org, "token")
+            latest = qo.get_latest_release_version(repo)
+            assert str(latest) == "1.2.0"
+
+    def test_get_latest_release_version_not_found(self):
+        """Test if proper exception is raised when no package is not found"""
+        org = "test_org"
+        repo = "test_repo"
+
+        with requests_mock.Mocker() as m:
+            m.get(
+                '/cnr/api/v1/packages/{}/{}'.format(org, repo),
+                status_code=404,
+            )
+
+            qo = QuayOrganization(org, "token")
+            with pytest.raises(QuayPackageNotFound):
+                qo.get_latest_release_version(repo)
