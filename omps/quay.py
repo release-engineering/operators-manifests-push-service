@@ -242,14 +242,15 @@ class QuayOrganization:
         res.raise_for_status()
         return res.json()
 
-    def get_latest_release_version(self, repo):
-        """Get the latest release version
+    def get_releases_raw(self, repo):
+        """Get raw releases from quay, these release may not be compatible
+        with OMPS versioning
 
         :param repo: repository name
         :raise QuayPackageNotFound: package doesn't exist
         :raise QuayPackageError: failed to retrieve info about package
-        :return: Latest release version
-        :rtype: PackageRelease
+        :return: Releases
+        :rtype: List[str]
         """
         def _raise(exc):
             raise QuayPackageError(
@@ -270,9 +271,22 @@ class QuayOrganization:
         except requests.exceptions.RequestException as e:
             _raise(e)
 
+        releases = [package['release'] for package in res]
+        return releases
+
+    def get_releases(self, repo):
+        """Get release versions (only valid)
+
+        :param repo: repository name
+        :raise QuayPackageNotFound: package doesn't exist
+        :raise QuayPackageError: failed to retrieve info about package
+        :return: valid releases
+        :rtype: List[ReleaseVersion]
+        """
+        releases_raw = self.get_releases_raw(repo)
+
         releases = []
-        for package in res:
-            release = package['release']
+        for release in releases_raw:
             try:
                 version = ReleaseVersion.from_str(release)
             except ValueError as e:
@@ -282,6 +296,18 @@ class QuayOrganization:
             else:
                 releases.append(version)
 
+        return releases
+
+    def get_latest_release_version(self, repo):
+        """Get the latest release version
+
+        :param repo: repository name
+        :raise QuayPackageNotFound: package doesn't exist
+        :raise QuayPackageError: failed to retrieve info about package
+        :return: Latest release version
+        :rtype: ReleaseVersion
+        """
+        releases = self.get_releases(repo)
         if not releases:
             # no valid versions found, assume that this will be first package
             # uploaded by service
@@ -291,7 +317,46 @@ class QuayOrganization:
                     )
                 )
 
-        return max(releases)
+        return max(self.get_releases(repo))
+
+    def delete_release(self, repo, version):
+        """
+        Delete specified version of release from repository
+
+        :param str repo: name of repository
+        :param ReleaseVersion|str version: version of release
+        :raises QuayPackageNotFound: when package is not found
+        :raises QuayPackageError: when an error happened during removal
+        """
+        endpoint = '/cnr/api/v1/packages/{org}/{repo}/{version}/helm'
+        url = '{q}{e}'.format(
+            q=self._quay_url,
+            e=endpoint.format(
+                org=self._organization,
+                repo=repo,
+                version=version,
+            )
+        )
+        headers = {'Authorization': self._token}
+
+        logger.info('Deleting release %s/%s, v:%s',
+                    self._organization, repo, version)
+
+        r = requests.delete(url, headers=headers)
+
+        if r.status_code != requests.codes.ok:
+
+            try:
+                msg = r.json()['error']['message']
+            except Exception:
+                msg = "Unknown error"
+
+            if r.status_code == requests.codes.not_found:
+                logger.info("Delete release (404): %s", msg)
+                raise QuayPackageNotFound(msg)
+
+            logger.error("Delete release (%s): %s", r.status_code, msg)
+            raise QuayPackageError(msg)
 
 
 QUAY_ORG_MANAGER = QuayOrganizationManager()

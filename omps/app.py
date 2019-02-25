@@ -9,6 +9,7 @@ from flask import Flask
 
 from .errors import init_errors_handling
 from .logger import init_logging
+from .packages import BLUEPRINT as PACKAGES_BP
 from .push import BLUEPRINT as PUSH_BP
 from .settings import init_config
 from .quay import QUAY_ORG_MANAGER
@@ -43,6 +44,7 @@ def _init_errors_handling(app):
 def _register_blueprints(app):
     logger.debug('Registering blueprints')
     app.register_blueprint(PUSH_BP, url_prefix='/push')
+    app.register_blueprint(PACKAGES_BP, url_prefix='/packages')
 
 
 app = create_app()

@@ -103,6 +103,62 @@ or with explicit release version
 curl -X POST https://example.com/push/myorg/myrepo/zipfile/1.1.5 -F "file=@manifests.zip"
 ```
 
+### Removing released operators manifests
+
+
+#### Endpoints
+
+* [DELETE] `/packages/<organization>/<repository>/<version>`
+* [DELETE] `/packages/<organization>/<repository>`
+
+If `<version>` is omitted then all released operator manifests are removed
+from the specified application repository, but the repository itself will **not** be
+deleted (the feature is out of scope, for now).
+
+#### Replies
+
+**OK**
+
+HTTP code: 200
+
+```json
+{
+  "organization": "organization name",
+  "repo": "repository name",
+  "deleted": ["version", "..."]
+}
+
+```
+
+**Failures**
+
+Error messages have following format:
+```
+{
+  "status": <http numeric code>,
+  "error": "<error ID string>",
+  "message": "<detailed error description>",
+}
+```
+
+
+| HTTP Code / `status` |  `error`    |  Explanation        |
+|-----------|------------------------|---------------------|
+|404| OMPSOrganizationNotFound | Requested organization is not configured on server side |
+|404| QuayPackageNotFound | Requested package doesn't exist in quay |
+|500| QuayLoginError | Server cannot login to quay, probably misconfiguration |
+|500| QuayPackageError | Getting information about released packages or deleting failed |
+
+
+#### Examples
+```bash
+curl -X DELETE https://example.com/packages/myorg/myrepo
+```
+or with explicit release version
+```bash
+curl -X DELETE https://example.com/packages/myorg/myrepo/1.1.5
+```
+
 
 ## Development
 
