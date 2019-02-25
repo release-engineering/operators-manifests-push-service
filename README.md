@@ -1,6 +1,6 @@
 # Operators Manifests Push Service (OMPS)
 
-[![Build Status](https://travis-ci.com/release-engineering/operators-manifests-push-service.svg?branch=master)](https://travis-ci.com/release-engineering/operators-manifests-push-service)
+[![Build Status](https://travis-ci.org/release-engineering/operators-manifests-push-service.svg?branch=master)](https://travis-ci.org/release-engineering/operators-manifests-push-service)
 [![Coverage Status](https://coveralls.io/repos/github/release-engineering/operators-manifests-push-service/badge.svg?branch=master)](https://coveralls.io/github/release-engineering/operators-manifests-push-service?branch=master)
 
 Service for pushing operators manifests to quay.io from various sources.
