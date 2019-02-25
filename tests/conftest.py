@@ -12,6 +12,7 @@ import zipfile
 from flexmock import flexmock
 import operatorcourier.api
 import pytest
+import requests
 import requests_mock
 
 from omps.app import app
@@ -19,6 +20,7 @@ from omps.errors import QuayPackageNotFound
 from omps.quay import QuayOrganization
 
 
+MOCK_VERSION = "0.0.1"
 
 EntrypointMeta = namedtuple('EntrypointMeta', 'url_path,org,repo,version')
 
@@ -79,6 +81,26 @@ def endpoint_push_zipfile(request):
     )
 
 
+@pytest.fixture(params=[
+    True,  # endpoint with version
+    False,  # endpoint without version
+])
+def endpoint_packages(request):
+    """Returns URL for packages endpoints"""
+    organization = 'testorg'
+    repo = 'repo-Y'
+    version = MOCK_VERSION
+
+    url_path = '/packages/{}/{}'.format(organization, repo)
+    if request.param:
+        url_path = '{}/{}'.format(url_path, version)
+
+    yield EntrypointMeta(
+        url_path=url_path, org=organization,
+        repo=repo, version=version
+    )
+
+
 @pytest.fixture
 def mocked_quay_io():
     """Mocking quay.io answers"""
@@ -90,6 +112,27 @@ def mocked_quay_io():
         m.get(
             re.compile(r'/cnr/api/v1/packages/.*'),
             status_code=404,
+        )
+        yield m
+
+
+@pytest.fixture
+def mocked_packages_delete_quay_io():
+    """Mocking quay.io answers for retrieving and deleting packages"""
+    with requests_mock.Mocker() as m:
+        m.post(
+            '/cnr/api/v1/users/login',
+            json={'token': 'faketoken'}
+        )
+        m.get(
+            re.compile(r'/cnr/api/v1/packages/.*'),
+            json=[
+                {"release": MOCK_VERSION},
+            ],
+        )
+        m.delete(
+            re.compile(r'/cnr/api/v1/packages/.*'),
+            status_code=requests.codes.ok,
         )
         yield m
 

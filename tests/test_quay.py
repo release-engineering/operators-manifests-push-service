@@ -3,11 +3,14 @@
 # see the LICENSE file for license
 #
 
+import flexmock
+import requests
 import requests_mock
 import pytest
 
 from omps.errors import (
     OMPSOrganizationNotFound,
+    QuayPackageError,
     QuayPackageNotFound,
     QuayLoginError
 )
@@ -164,3 +167,98 @@ class TestQuayOrganization:
             qo = QuayOrganization(org, "token")
             with pytest.raises(QuayPackageNotFound):
                 qo.get_latest_release_version(repo)
+
+    def test_get_latest_release_version_invalid_version_only(self):
+        """Test if proper exception is raised when packages only with invalid
+        version are available
+
+        Invalid versions should be ignored, thus QuayPackageNotFound
+        should be raised as may assume that OMPS haven't managed that packages
+        previously
+        """
+        org = "test_org"
+        repo = "test_repo"
+
+        with requests_mock.Mocker() as m:
+            m.get(
+                '/cnr/api/v1/packages/{}/{}'.format(org, repo),
+                json=[
+                    {'release': "1.0.0-invalid"},
+                ],
+            )
+
+            qo = QuayOrganization(org, "token")
+            with pytest.raises(QuayPackageNotFound):
+                qo.get_latest_release_version(repo)
+
+    def test_get_releases_raw(self):
+        """Test if all release are returned from quay.io, including format that
+        is OMPS invalid"""
+        org = "test_org"
+        repo = "test_repo"
+
+        with requests_mock.Mocker() as m:
+            m.get(
+                '/cnr/api/v1/packages/{}/{}'.format(org, repo),
+                json=[
+                    {'release': "1.0.0"},
+                    {'release': "1.2.0"},
+                    {'release': "1.0.1-random"},
+                ]
+            )
+
+            qo = QuayOrganization(org, "token")
+            releases = qo.get_releases_raw(repo)
+            assert sorted(releases) == ["1.0.0", "1.0.1-random", "1.2.0"]
+
+    def test_get_releases(self):
+        """Test if only proper releases are used and returned"""
+        org = "test_org"
+        repo = "test_repo"
+
+        qo = QuayOrganization(org, "token")
+        (flexmock(qo)
+         .should_receive('get_releases_raw')
+         .and_return(["1.0.0", "1.0.1-random", "1.2.0"])
+         )
+
+        expected = [ReleaseVersion.from_str(v) for v in ["1.0.0", "1.2.0"]]
+
+        assert qo.get_releases(repo) == expected
+
+    def test_delete_release(self):
+        """Test of deleting releases"""
+        org = "test_org"
+        repo = "test_repo"
+        version = '1.2.3'
+
+        qo = QuayOrganization(org, "token")
+
+        with requests_mock.Mocker() as m:
+            m.delete(
+                '/cnr/api/v1/packages/{}/{}/{}/helm'.format(
+                    org, repo, version),
+            )
+            qo.delete_release(repo, version)
+
+    @pytest.mark.parametrize('code,exc_class', [
+        (requests.codes.not_found, QuayPackageNotFound),
+        (requests.codes.method_not_allowed, QuayPackageError),
+        (requests.codes.internal_server_error, QuayPackageError),
+    ])
+    def test_delete_release_quay_error(self, code, exc_class):
+        """Test of error handling from quay errors"""
+        org = "test_org"
+        repo = "test_repo"
+        version = '1.2.3'
+
+        qo = QuayOrganization(org, "token")
+
+        with requests_mock.Mocker() as m:
+            m.delete(
+                '/cnr/api/v1/packages/{}/{}/{}/helm'.format(
+                    org, repo, version),
+                status_code=code
+            )
+            with pytest.raises(exc_class):
+                qo.delete_release(repo, version)
