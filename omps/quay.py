@@ -4,6 +4,8 @@
 #
 
 """Module related to quay operations"""
+
+import re
 from functools import total_ordering
 import logging
 
@@ -44,18 +46,11 @@ class ReleaseVersion:
 
         assert isinstance(version, str)
 
-        parts = version.split('.')
-        if len(parts) != 3:
-            _raise("version must consist of 3 parts separated by '.'")
-
-        for part in parts:
-            try:
-                value = int(part)
-            except ValueError:
-                _raise("'{}' cannot be converted to integer".format(part))
-            else:
-                if value < 0:
-                    _raise("integer '{}' must be >=0".format(value))
+        r_int_part = r"(0|[1-9][0-9]*)"
+        regexp = r"^{p}\.{p}\.{p}$".format(p=r_int_part)
+        match = re.match(regexp, version)
+        if not match:
+            _raise("must match regexp '{}'".format(regexp))
 
     @classmethod
     def from_str(cls, version):

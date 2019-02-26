@@ -18,11 +18,16 @@ from omps.settings import TestConfig, Config
 class TestReleaseVersion:
     """Tests for ReleaseVersion class"""
 
-    def test_from_str(self):
+    @pytest.mark.parametrize('version,expected', [
+        ("1.2.3", (1, 2, 3)),
+        ("1.0.0", (1, 0, 0)),
+        ("0.0.0", (0, 0, 0)),
+    ])
+    def test_from_str(self, version, expected):
         """Test of creating ReleaseVersion object from string"""
-        version = ReleaseVersion.from_str("1.2.3")
-        assert isinstance(version, ReleaseVersion)
-        assert version.version_tuple == (1, 2, 3)
+        v = ReleaseVersion.from_str(version)
+        assert isinstance(v, ReleaseVersion)
+        assert v.version_tuple == expected
 
     @pytest.mark.parametrize('value', [
         "1",
@@ -32,6 +37,10 @@ class TestReleaseVersion:
         "1-5.1.0",
         "-1.2.3",
         "a.b.c",
+        "1.01.0",
+        "+1.0.0",
+        "0x1.0.0",
+        "1.1.1a0",
     ])
     def test_from_str_invalid(self, value):
         """Test if error is properly raised for invalid input"""
