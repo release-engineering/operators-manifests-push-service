@@ -71,7 +71,7 @@ def endpoint_push_zipfile(request):
     repo = 'repo-Y'
     version = '0.0.1' if request.param else None
 
-    url_path = '/push/{}/{}/zipfile'.format(organization, repo)
+    url_path = '/{}/{}/zipfile'.format(organization, repo)
     if version:
         url_path = '{}/{}'.format(url_path, version)
 
@@ -91,7 +91,7 @@ def endpoint_packages(request):
     repo = 'repo-Y'
     version = MOCK_VERSION
 
-    url_path = '/packages/{}/{}'.format(organization, repo)
+    url_path = '/{}/{}'.format(organization, repo)
     if request.param:
         url_path = '{}/{}'.format(url_path, version)
 

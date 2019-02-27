@@ -43,8 +43,8 @@ def _init_errors_handling(app):
 
 def _register_blueprints(app):
     logger.debug('Registering blueprints')
-    app.register_blueprint(PUSH_BP, url_prefix='/push')
-    app.register_blueprint(PACKAGES_BP, url_prefix='/packages')
+    app.register_blueprint(PUSH_BP)
+    app.register_blueprint(PACKAGES_BP)
 
 
 app = create_app()
