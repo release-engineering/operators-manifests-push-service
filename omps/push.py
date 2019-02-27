@@ -109,8 +109,10 @@ def _get_package_version(quay_org, repo, version=None):
     return version
 
 
+@BLUEPRINT.route("/<organization>/<repo>/zipfile", defaults={"version": None},
+                 methods=('POST',))
 @BLUEPRINT.route("/<organization>/<repo>/zipfile/<version>", methods=('POST',))
-def push_zipfile_with_version(organization, repo, version=None):
+def push_zipfile(organization, repo, version=None):
     """
     Push the particular version of operator manifest to registry from
     the uploaded zipfile
@@ -143,17 +145,6 @@ def push_zipfile_with_version(organization, repo, version=None):
     resp = jsonify(data)
     resp.status_code = 200
     return resp
-
-
-@BLUEPRINT.route("/<organization>/<repo>/zipfile", methods=('POST',))
-def push_zipfile(organization, repo):
-    """
-    Push operator manifest to registry from uploaded zipfile
-
-    :param organization: quay.io organization
-    :param repo: target repository
-    """
-    return push_zipfile_with_version(organization, repo, None)
 
 
 @BLUEPRINT.route("/<organization>/<repo>/koji/<nvr>", methods=('POST',))
