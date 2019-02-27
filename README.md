@@ -45,8 +45,8 @@ Operator manifests files must be added to zip archive
 
 #### Endpoints
 
-* [POST] `/<organization>/<repository>/zipfile/<version>`
-* [POST] `/<organization>/<repository>/zipfile`
+* [POST] `/v1/<organization>/<repository>/zipfile/<version>`
+* [POST] `/v1/<organization>/<repository>/zipfile`
 
 Zip file must be attached as `content_type='multipart/form-data'` assigned to
 field `file`. See `curl` examples bellow.
@@ -96,11 +96,11 @@ Error messages have following format:
 
 #### Example
 ```bash
-curl -X POST https://example.com/myorg/myrepo/zipfile -F "file=@manifests.zip"
+curl -X POST https://example.com/v1/myorg/myrepo/zipfile -F "file=@manifests.zip"
 ```
 or with explicit release version
 ```bash
-curl -X POST https://example.com/myorg/myrepo/zipfile/1.1.5 -F "file=@manifests.zip"
+curl -X POST https://example.com/v1/myorg/myrepo/zipfile/1.1.5 -F "file=@manifests.zip"
 ```
 
 ### Removing released operators manifests
@@ -108,8 +108,8 @@ curl -X POST https://example.com/myorg/myrepo/zipfile/1.1.5 -F "file=@manifests.
 
 #### Endpoints
 
-* [DELETE] `/<organization>/<repository>/<version>`
-* [DELETE] `/<organization>/<repository>`
+* [DELETE] `/v1/<organization>/<repository>/<version>`
+* [DELETE] `/v1/<organization>/<repository>`
 
 If `<version>` is omitted then all released operator manifests are removed
 from the specified application repository, but the repository itself will **not** be
@@ -152,11 +152,11 @@ Error messages have following format:
 
 #### Examples
 ```bash
-curl -X DELETE https://example.com/myorg/myrepo
+curl -X DELETE https://example.com/v1/myorg/myrepo
 ```
 or with explicit release version
 ```bash
-curl -X DELETE https://example.com/myorg/myrepo/1.1.5
+curl -X DELETE https://example.com/v1/myorg/myrepo/1.1.5
 ```
 
 

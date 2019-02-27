@@ -68,7 +68,7 @@ def test_push_zipfile_no_file(client, endpoint_push_zipfile, mocked_quay_io):
 
 def test_push_koji_nvr(client):
     """Test REST API for pushing operators form koji by NVR"""
-    rv = client.post('/organization-X/repo-Y/koji/nvr-Z')
+    rv = client.post('/v1/organization-X/repo-Y/koji/nvr-Z')
     assert rv.status_code == 200
     expected = {
         'organization': 'organization-X',
@@ -79,11 +79,11 @@ def test_push_koji_nvr(client):
     assert rv.get_json() == expected
 
 
-ZIP_ENDPOINT_NOVER = '/organization-X/repo-Y/zipfile'
+ZIP_ENDPOINT_NOVER = '/v1/organization-X/repo-Y/zipfile'
 @pytest.mark.parametrize('endpoint', [
     ZIP_ENDPOINT_NOVER,
-    '/organization-X/repo-Y/zipfile/1.0.1',
-    '/organization-X/repo-Y/koji/nvr-Z',
+    '/v1/organization-X/repo-Y/zipfile/1.0.1',
+    '/v1/organization-X/repo-Y/koji/nvr-Z',
 ])
 @pytest.mark.parametrize('method', [
     'GET', 'PATCH' 'PUT', 'HEAD', 'DELETE', 'TRACE',
@@ -104,8 +104,9 @@ def test_method_not_allowed(client, endpoint, method):
 
 @pytest.mark.parametrize('endpoint', [
     '/',
-    '/organization-X/repo-Y/koji/',
-    '/organization-X/repo-Y/zipfile/version-Z/extra-something',
+    '/v1'
+    '/v1/organization-X/repo-Y/koji/',
+    '/v1/organization-X/repo-Y/zipfile/version-Z/extra-something',
 ])
 def test_404_for_mistyped_entrypoints(client, endpoint):
     """Test if HTTP 404 is returned for unexpected endpoints"""

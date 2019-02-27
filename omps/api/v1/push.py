@@ -7,22 +7,22 @@ import os
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 import zipfile
 
-from flask import Blueprint, jsonify, current_app, request
+from flask import jsonify, current_app, request
 
-from .constants import (
+from . import API
+from omps.constants import (
     ALLOWED_EXTENSIONS,
     DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE,
 )
-from .errors import (
+from omps.errors import (
     OMPSInvalidVersionFormat,
     OMPSUploadedFileError,
     OMPSExpectedFileError,
     QuayPackageNotFound,
 )
-from .quay import QUAY_ORG_MANAGER, ReleaseVersion
+from omps.quay import QUAY_ORG_MANAGER, ReleaseVersion
 
 logger = logging.getLogger(__name__)
-BLUEPRINT = Blueprint('push', __name__)
 
 
 def validate_allowed_extension(filename):
@@ -109,9 +109,9 @@ def _get_package_version(quay_org, repo, version=None):
     return version
 
 
-@BLUEPRINT.route("/<organization>/<repo>/zipfile", defaults={"version": None},
+@API.route("/<organization>/<repo>/zipfile", defaults={"version": None},
                  methods=('POST',))
-@BLUEPRINT.route("/<organization>/<repo>/zipfile/<version>", methods=('POST',))
+@API.route("/<organization>/<repo>/zipfile/<version>", methods=('POST',))
 def push_zipfile(organization, repo, version=None):
     """
     Push the particular version of operator manifest to registry from
@@ -147,7 +147,7 @@ def push_zipfile(organization, repo, version=None):
     return resp
 
 
-@BLUEPRINT.route("/<organization>/<repo>/koji/<nvr>", methods=('POST',))
+@API.route("/<organization>/<repo>/koji/<nvr>", methods=('POST',))
 def push_koji_nvr(organization, repo, nvr):
     """
     Get operator manifest from koji by specified NVR and upload operator

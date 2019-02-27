@@ -26,8 +26,8 @@ def test_delete_released_package(
 
 
 @pytest.mark.parametrize('endpoint', [
-    '/organization-X/repo-Y',
-    '/organization-X/repo-Y/1.0.1',
+    '/v1/organization-X/repo-Y',
+    '/v1/organization-X/repo-Y/1.0.1',
 ])
 @pytest.mark.parametrize('method', [
     'GET', 'PATCH' 'PUT', 'HEAD', 'POST', 'TRACE',
@@ -44,8 +44,9 @@ def test_method_not_allowed(client, endpoint, method):
 
 @pytest.mark.parametrize('endpoint', [
     '/',
-    '/organization-X/',
-    '/organization-X/repo-Y/version-Z/extra-something',
+    '/v1',
+    '/v1/organization-X/',
+    '/v1/organization-X/repo-Y/version-Z/extra-something',
 ])
 def test_404_for_mistyped_entrypoints(client, endpoint):
     """Test if HTTP 404 is returned for unexpected endpoints"""
