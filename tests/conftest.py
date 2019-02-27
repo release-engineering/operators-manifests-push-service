@@ -3,7 +3,6 @@
 # see the LICENSE file for license
 #
 
-from collections import namedtuple
 import re
 import os
 import shutil
@@ -16,13 +15,11 @@ import requests
 import requests_mock
 
 from omps.app import app
-from omps.errors import QuayPackageNotFound
-from omps.quay import QuayOrganization
 
 
-MOCK_VERSION = "0.0.1"
-
-EntrypointMeta = namedtuple('EntrypointMeta', 'url_path,org,repo,version')
+@pytest.fixture()
+def release_version():
+    return "0.0.1"
 
 
 @pytest.fixture
@@ -61,46 +58,6 @@ def valid_manifests_archive(datadir, tmpdir):
     return path
 
 
-@pytest.fixture(params=[
-    True,  # endpoint with version
-    False,  # endpoint without version
-])
-def endpoint_push_zipfile(request):
-    """Returns URL for zipfile endpoints"""
-    organization = 'testorg'
-    repo = 'repo-Y'
-    version = '0.0.1' if request.param else None
-
-    url_path = '/{}/{}/zipfile'.format(organization, repo)
-    if version:
-        url_path = '{}/{}'.format(url_path, version)
-
-    yield EntrypointMeta(
-        url_path=url_path, org=organization,
-        repo=repo, version=version
-    )
-
-
-@pytest.fixture(params=[
-    True,  # endpoint with version
-    False,  # endpoint without version
-])
-def endpoint_packages(request):
-    """Returns URL for packages endpoints"""
-    organization = 'testorg'
-    repo = 'repo-Y'
-    version = MOCK_VERSION
-
-    url_path = '/{}/{}'.format(organization, repo)
-    if request.param:
-        url_path = '{}/{}'.format(url_path, version)
-
-    yield EntrypointMeta(
-        url_path=url_path, org=organization,
-        repo=repo, version=version
-    )
-
-
 @pytest.fixture
 def mocked_quay_io():
     """Mocking quay.io answers"""
@@ -117,7 +74,7 @@ def mocked_quay_io():
 
 
 @pytest.fixture
-def mocked_packages_delete_quay_io():
+def mocked_packages_delete_quay_io(release_version):
     """Mocking quay.io answers for retrieving and deleting packages"""
     with requests_mock.Mocker() as m:
         m.post(
@@ -127,7 +84,7 @@ def mocked_packages_delete_quay_io():
         m.get(
             re.compile(r'/cnr/api/v1/packages/.*'),
             json=[
-                {"release": MOCK_VERSION},
+                {"release": release_version},
             ],
         )
         m.delete(

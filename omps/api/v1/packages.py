@@ -4,18 +4,18 @@
 #
 import logging
 
-from flask import Blueprint, jsonify
+from flask import jsonify
 import requests
 
-from .quay import QUAY_ORG_MANAGER, ReleaseVersion
+from . import API
+from omps.quay import QUAY_ORG_MANAGER, ReleaseVersion
 
 logger = logging.getLogger(__name__)
-BLUEPRINT = Blueprint('packages', __name__)
 
 
-@BLUEPRINT.route("/<organization>/<repo>", defaults={'version': None},
+@API.route("/<organization>/<repo>", defaults={'version': None},
                  methods=('DELETE',))
-@BLUEPRINT.route("/<organization>/<repo>/<version>", methods=('DELETE',))
+@API.route("/<organization>/<repo>/<version>", methods=('DELETE',))
 def delete_package_release(organization, repo, version=None):
     """
     Delete particular version of released package from quay.io
