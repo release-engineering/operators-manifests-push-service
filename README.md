@@ -37,6 +37,12 @@ Running container with custom CA certificate
 docker run --rm -p 8080:8080 -e CA_URL='http://example.com/ca-cert.crt' omps:latest
 ```
 
+Running container with customized number of workers (default: 8):
+```bash
+docker run --rm -p 8080:8080 -e WORKERS_NUM=6 omps:latest
+```
+
+
 ## Usage
 
 ### Uploading operators manifests from zipfile

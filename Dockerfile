@@ -7,6 +7,8 @@ LABEL \
 # The caller can optionally provide a cacert url
 ARG cacert_url=undefined
 
+ENV WORKERS_NUM 8
+
 WORKDIR /src
 RUN dnf -y install \
     python3-gunicorn \
@@ -28,4 +30,4 @@ COPY . .
 RUN pip3 install . --no-deps
 USER 1001
 EXPOSE 8080
-ENTRYPOINT docker/install-ca.sh && gunicorn-3 --workers 8 --bind 0.0.0.0:8080 --access-logfile=- --enable-stdio-inheritance omps.app:app
+ENTRYPOINT docker/install-ca.sh && gunicorn-3 --workers ${WORKERS_NUM} --bind 0.0.0.0:8080 --access-logfile=- --enable-stdio-inheritance omps.app:app
