@@ -116,8 +116,6 @@ class Config(object):
         }
     }
 
-
-
     def __init__(self, conf_section_obj):
         """
         Initialize the Config object with defaults and then override them
@@ -190,10 +188,12 @@ class Config(object):
                     if value is not None:
                         value = convert(value)
                 except (TypeError, ValueError):
-                    raise TypeError("Configuration value conversion failed for name: %s" % key)
+                    error = "Configuration value conversion failed for name: %s"
+                    raise TypeError(error % key)
             # unknown type/unsupported conversion
             elif convert is not None:
-                raise TypeError("Unsupported type %s for configuration item name: %s" % (convert, key))
+                error = "Unsupported type %s for configuration item name: %s"
+                raise TypeError(error % (convert, key))
 
         # Set the attribute to the correct value
         setattr(self, key, value)

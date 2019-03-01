@@ -80,6 +80,8 @@ def test_push_koji_nvr(client):
 
 
 ZIP_ENDPOINT_NOVER = '/organization-X/repo-Y/zipfile'
+
+
 @pytest.mark.parametrize('endpoint', [
     ZIP_ENDPOINT_NOVER,
     '/organization-X/repo-Y/zipfile/1.0.1',
@@ -114,4 +116,3 @@ def test_404_for_mistyped_entrypoints(client, endpoint):
     rv_json = rv.get_json()
     assert rv_json['error'] == 'NotFound'
     assert rv_json['status'] == 404
-

@@ -80,6 +80,8 @@ def test_push_koji_nvr(client):
 
 
 ZIP_ENDPOINT_NOVER = '/v1/organization-X/repo-Y/zipfile'
+
+
 @pytest.mark.parametrize('endpoint', [
     ZIP_ENDPOINT_NOVER,
     '/v1/organization-X/repo-Y/zipfile/1.0.1',
