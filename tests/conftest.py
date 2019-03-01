@@ -37,7 +37,7 @@ def datadir(tmpdir):
 
     :return: tmpdir data path
     """
-    path =  os.path.join(tmpdir, "data")
+    path = os.path.join(tmpdir, "data")
     data_dir = os.path.join(os.path.dirname(__file__), "data")
     shutil.copytree(data_dir, path)
     return path

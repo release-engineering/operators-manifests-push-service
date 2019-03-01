@@ -44,4 +44,5 @@ def _register_blueprints(app):
     logger.debug('Registering blueprints')
     app.register_blueprint(API_V1, url_prefix='/v1')
 
+
 app = create_app()

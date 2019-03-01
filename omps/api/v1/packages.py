@@ -8,13 +8,13 @@ from flask import jsonify
 import requests
 
 from . import API
-from omps.quay import QUAY_ORG_MANAGER, ReleaseVersion
+from omps.quay import QUAY_ORG_MANAGER
 
 logger = logging.getLogger(__name__)
 
 
 @API.route("/<organization>/<repo>", defaults={'version': None},
-                 methods=('DELETE',))
+           methods=('DELETE',))
 @API.route("/<organization>/<repo>/<version>", methods=('DELETE',))
 def delete_package_release(organization, repo, version=None):
     """

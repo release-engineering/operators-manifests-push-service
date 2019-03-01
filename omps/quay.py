@@ -307,10 +307,10 @@ class QuayOrganization:
             # no valid versions found, assume that this will be first package
             # uploaded by service
             raise QuayPackageNotFound(
-                    "Package {}/{} has not valid versions uploaded".format(
-                        self._organization, repo
-                    )
+                "Package {}/{} has not valid versions uploaded".format(
+                    self._organization, repo
                 )
+            )
 
         return max(self.get_releases(repo))
 

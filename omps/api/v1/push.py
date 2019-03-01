@@ -110,7 +110,7 @@ def _get_package_version(quay_org, repo, version=None):
 
 
 @API.route("/<organization>/<repo>/zipfile", defaults={"version": None},
-                 methods=('POST',))
+           methods=('POST',))
 @API.route("/<organization>/<repo>/zipfile/<version>", methods=('POST',))
 def push_zipfile(organization, repo, version=None):
     """
