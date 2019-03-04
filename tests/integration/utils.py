@@ -25,7 +25,8 @@ class OMPS(object):
         """Organization configured in OMPS."""
         return self._organization
 
-    def upload(self, repo, archive, organization=None, version=None):
+    def upload(self, repo, archive, organization=None, version=None,
+               field='file'):
         """Create a new release for a package by uploading an archive.
 
         Args:
@@ -37,33 +38,19 @@ class OMPS(object):
                 If None, OMPS will create it.
 
         Returns:
-            A dictionary holding details of the new release created.
-            Example:
-                {
-                    "extracted_files": [
-                        "crd.yaml",
-                        "packages.yaml",
-                        "csv.yaml"
-                    ],
-                    "organization": "community-operators",
-                    "repo": "etcd",
-                    "version": "1.0.0"
-                }
+            A requests.Response object.
+            http://docs.python-requests.org/en/master/api/#requests.Response
 
-        Raises:
-            HTTPError: Upload failed.
+        Raises: None.
         """
         url = '{api}/{org}/{repo}/zipfile{version}'.format(
             api=self._api_url,
             org=organization or self._organization,
             repo=repo,
             version='' if not version else '/' + version)
-        files = {'file': open(archive, 'rb')}
+        files = {field: open(archive, 'rb')}
 
-        r = requests.post(url, files=files)
-        r.raise_for_status()
-
-        return r.json()
+        return requests.post(url, files=files)
 
 
 class QuayAppRegistry(object):
@@ -139,6 +126,12 @@ class QuayAppRegistry(object):
             r.raise_for_status()
 
         return r.json()
+
+    def get_release(self, namespace, package, release):
+        for rel in self.get_releases(namespace, package):
+            if rel['release'] == release:
+                return rel
+        return {}
 
     def get_packages(self, namespace):
         """Get all packages from a namespace.
