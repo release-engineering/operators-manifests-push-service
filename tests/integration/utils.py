@@ -130,7 +130,23 @@ class QuayAppRegistry(object):
             List of dictionaries, representing releases. Empty list if the
             package is not found.
             Example:
-                TODO
+                [
+                    {
+                        "content": {
+                            "digest": "<64 hex chars>",
+                            "mediaType": "application/vnd.cnr.package.helm.v0.tar+gzip",
+                            "size": 1628,
+                            "urls": []
+                        },
+                        "created_at": "2019-03-05T11:39:28",
+                        "digest": "sha256:<64 hex chars>",
+                        "mediaType": "application/vnd.cnr.package-manifest.helm.v0.json",
+                        "metadata": null,
+                        "package": "community-operators/etcd",
+                        "release": "1.0.0"
+                    }
+                ]
+
 
         Raises:
             HTTPError: For all errors except 404 Not Found.
@@ -164,7 +180,23 @@ class QuayAppRegistry(object):
         Returns:
             List of dictionaries, representing packages.
             Example:
-                TODO
+                [
+                    {
+                        "channels": null,
+                        "created_at": "2019-03-05T09:41:48",
+                        "default": "1.0.0",
+                        "manifests": [
+                            "helm"
+                        ],
+                        "name": "community-operators/etcd",
+                        "namespace": "community-operators",
+                        "releases": [
+                            "1.0.0"
+                        ],
+                        "updated_at": "2019-03-05T09:41:48",
+                        "visibility": "public"
+                    }
+                ]
 
         Raises:
             HTTPError: Getting packages failed.
