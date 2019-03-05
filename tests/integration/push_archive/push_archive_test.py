@@ -16,7 +16,8 @@ def test_initial_upload(omps, quay_app_registry, tmp_path):
     """
 
     # Make sure there 'int-test' operator is empty.
-    releases = quay_app_registry.get_releases(omps.organization, 'int-test')
+    releases = [r['release'] for r in
+                quay_app_registry.get_releases(omps.organization, 'int-test')]
     quay_app_registry.delete_releases(omps.organization + '/int-test', releases)
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
