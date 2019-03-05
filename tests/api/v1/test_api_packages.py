@@ -26,6 +26,18 @@ def test_delete_released_package(
     assert rv.get_json() == expected
 
 
+def test_unauthorized(client, endpoint_packages):
+    """Test if api properly refuses unauthorized requests"""
+    rv = client.delete(
+        endpoint_packages.url_path,
+    )
+
+    assert rv.status_code == requests.codes.forbidden, rv.get_json()
+    rv_json = rv.get_json()
+    assert rv_json['status'] == requests.codes.forbidden
+    assert rv_json['error'] == 'OMPSAuthorizationHeaderRequired'
+
+
 @pytest.mark.parametrize('endpoint', [
     '/v1/organization-X/repo-Y',
     '/v1/organization-X/repo-Y/1.0.1',

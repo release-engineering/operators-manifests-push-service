@@ -5,6 +5,7 @@
 
 from io import BytesIO
 
+import requests
 import pytest
 
 from omps import constants
@@ -67,6 +68,15 @@ def test_push_zipfile_no_file(
     rv_json = rv.get_json()
     assert rv_json['status'] == 400
     assert rv_json['error'] == 'OMPSExpectedFileError'
+
+
+def test_push_zipfile_unauthorized(client, endpoint_push_zipfile):
+    """Test if api properly refuses unauthorized requests"""
+    rv = client.post(endpoint_push_zipfile.url_path)
+    assert rv.status_code == requests.codes.forbidden, rv.get_json()
+    rv_json = rv.get_json()
+    assert rv_json['status'] == requests.codes.forbidden
+    assert rv_json['error'] == 'OMPSAuthorizationHeaderRequired'
 
 
 def test_push_koji_nvr(client):
