@@ -9,11 +9,12 @@ import requests
 
 def test_delete_released_package(
         client, valid_manifests_archive, endpoint_packages,
-        mocked_packages_delete_quay_io):
+        mocked_packages_delete_quay_io, auth_header):
     """Test REST API for deleting released operators manifest packages"""
 
     rv = client.delete(
         endpoint_packages.url_path,
+        headers=auth_header,
     )
 
     assert rv.status_code == requests.codes.ok, rv.get_json()

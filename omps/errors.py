@@ -24,16 +24,6 @@ class OMPSExpectedFileError(OMPSError):
     code = 400
 
 
-class OMPSOrganizationNotFound(OMPSError):
-    """Requested organization cannot be accessed"""
-    code = 404
-
-
-class QuayLoginError(OMPSError):
-    """Login to quay.io failed"""
-    code = 500
-
-
 class QuayCourierError(OMPSError):
     """Operator-courier library failures"""
     code = 500
@@ -52,6 +42,11 @@ class QuayPackageNotFound(OMPSError):
 class OMPSInvalidVersionFormat(OMPSError):
     """Invalid version format"""
     code = 400
+
+
+class OMPSAuthorizationHeaderRequired(OMPSError):
+    """Request doesn't contain 'Authorization' header"""
+    code = 403
 
 
 def json_error(status, error, message):

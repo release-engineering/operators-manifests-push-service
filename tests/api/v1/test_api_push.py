@@ -12,7 +12,7 @@ from omps import constants
 
 def test_push_zipfile(
         client, valid_manifests_archive, endpoint_push_zipfile,
-        mocked_quay_io, mocked_op_courier_push):
+        mocked_quay_io, mocked_op_courier_push, auth_header):
     """Test REST API for pushing operators form zipfile"""
     with open(valid_manifests_archive, 'rb') as f:
         data = {
@@ -20,6 +20,7 @@ def test_push_zipfile(
         }
         rv = client.post(
             endpoint_push_zipfile.url_path,
+            headers=auth_header,
             data=data,
             content_type='multipart/form-data',
         )
@@ -40,7 +41,7 @@ def test_push_zipfile(
 ))
 def test_push_zipfile_invalid_file(
         client, filename, endpoint_push_zipfile,
-        mocked_quay_io):
+        mocked_quay_io, auth_header):
     """Test if proper error is returned when no zip file is being attached"""
     data = {
         'file': (BytesIO(b'randombytes'), filename),
@@ -48,6 +49,7 @@ def test_push_zipfile_invalid_file(
     rv = client.post(
         endpoint_push_zipfile.url_path,
         data=data,
+        headers=auth_header,
         content_type='multipart/form-data',
     )
 
@@ -57,9 +59,10 @@ def test_push_zipfile_invalid_file(
     assert rv_json['error'] == 'OMPSUploadedFileError'
 
 
-def test_push_zipfile_no_file(client, endpoint_push_zipfile, mocked_quay_io):
+def test_push_zipfile_no_file(
+        client, endpoint_push_zipfile, mocked_quay_io, auth_header):
     """Test if proper error is returned when no file is being attached"""
-    rv = client.post(endpoint_push_zipfile.url_path)
+    rv = client.post(endpoint_push_zipfile.url_path, headers=auth_header)
     assert rv.status_code == 400, rv.get_json()
     rv_json = rv.get_json()
     assert rv_json['status'] == 400

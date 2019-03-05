@@ -48,3 +48,8 @@ def endpoint_packages(request, release_version):
         url_path=url_path, org=organization,
         repo=repo, version=release_version
     )
+
+
+@pytest.fixture()
+def auth_header():
+    return {'Authorization': 'random_token'}

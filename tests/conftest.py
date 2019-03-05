@@ -62,10 +62,6 @@ def valid_manifests_archive(datadir, tmpdir):
 def mocked_quay_io():
     """Mocking quay.io answers"""
     with requests_mock.Mocker() as m:
-        m.post(
-            '/cnr/api/v1/users/login',
-            json={'token': 'faketoken'}
-        )
         m.get(
             re.compile(r'/cnr/api/v1/packages/.*'),
             status_code=404,
@@ -77,10 +73,6 @@ def mocked_quay_io():
 def mocked_packages_delete_quay_io(release_version):
     """Mocking quay.io answers for retrieving and deleting packages"""
     with requests_mock.Mocker() as m:
-        m.post(
-            '/cnr/api/v1/users/login',
-            json={'token': 'faketoken'}
-        )
         m.get(
             re.compile(r'/cnr/api/v1/packages/.*'),
             json=[
@@ -90,24 +82,6 @@ def mocked_packages_delete_quay_io(release_version):
         m.delete(
             re.compile(r'/cnr/api/v1/packages/.*'),
             status_code=requests.codes.ok,
-        )
-        yield m
-
-
-@pytest.fixture
-def mocked_failed_quay_login():
-    """Returns HTTP 401 with error message"""
-    with requests_mock.Mocker() as m:
-        m.post(
-            'https://quay.io/cnr/api/v1/users/login',
-            json={
-                "error": {
-                    "code": "unauthorized-access",
-                    "details": {},
-                    "message": "Invalid Username or Password"
-                }
-            },
-            status_code=401,
         )
         yield m
 

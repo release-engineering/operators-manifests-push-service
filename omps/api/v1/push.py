@@ -10,6 +10,7 @@ import zipfile
 from flask import jsonify, current_app, request
 
 from . import API
+from omps.api.common import extract_auth_token
 from omps.constants import (
     ALLOWED_EXTENSIONS,
     DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE,
@@ -20,7 +21,7 @@ from omps.errors import (
     OMPSExpectedFileError,
     QuayPackageNotFound,
 )
-from omps.quay import QUAY_ORG_MANAGER, ReleaseVersion
+from omps.quay import QuayOrganization, ReleaseVersion
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +122,8 @@ def push_zipfile(organization, repo, version=None):
     :param repo: target repository
     :param version: version of operator manifest
     """
-    quay_org = QUAY_ORG_MANAGER.organization_login(organization)
+    token = extract_auth_token(request)
+    quay_org = QuayOrganization(organization, token)
 
     version = _get_package_version(quay_org, repo, version)
     logger.info("Using release version: %s", version)
