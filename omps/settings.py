@@ -7,10 +7,7 @@ import imp
 import os
 import sys
 
-import jsonschema
-
 from . import constants
-from .quay import QuayOrganizationManager
 
 
 class DefaultConfig:
@@ -32,12 +29,6 @@ class DevConfig(DefaultConfig):
 
 class TestConfig(DefaultConfig):
     TESTING = True
-    QUAY_ORGANIZATIONS = {
-        "testorg": {
-            "username": "testuser",
-            "password": "test_passwd",
-        }
-    }
 
 
 def init_config(app):
@@ -109,11 +100,6 @@ class Config(object):
             'default': constants.DEFAULT_RELEASE_VERSION,
             'desc': 'Default release version for new operator manifests releases'
         },
-        'quay_organizations': {
-            'type': dict,
-            'default': {},
-            'desc': 'Configuration of quay organizations'
-        }
     }
 
     def __init__(self, conf_section_obj):
@@ -222,10 +208,3 @@ class Config(object):
             raise ValueError(
                 "default_release_version must be in format 'x.y.z'")
         self._default_release_version = s
-
-    def _setifok_quay_organizations(self, s):
-        try:
-            QuayOrganizationManager.validate_config(s)
-        except jsonschema.ValidationError as e:
-            raise ValueError("config quay_organizations: {}".format(e))
-        self._quay_organizations = s

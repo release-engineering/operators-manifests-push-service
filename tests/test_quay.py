@@ -9,13 +9,13 @@ import requests_mock
 import pytest
 
 from omps.errors import (
-    OMPSOrganizationNotFound,
     QuayPackageError,
     QuayPackageNotFound,
-    QuayLoginError
 )
-from omps.quay import QuayOrganizationManager, QuayOrganization, ReleaseVersion
-from omps.settings import TestConfig, Config
+from omps.quay import QuayOrganization, ReleaseVersion
+
+
+TOKEN = "basic randomtoken"
 
 
 class TestReleaseVersion:
@@ -88,36 +88,6 @@ class TestReleaseVersion:
         version = ReleaseVersion.from_str("1.0.0")
         with pytest.raises(TypeError):
             assert version < value
-
-
-class TestQuayOrganizationManager:
-    """Tests for QuayOrganizationManager class"""
-
-    def test_organization_login(self, mocked_quay_io):
-        """Test successful org login"""
-        qom = QuayOrganizationManager()
-        conf = Config(TestConfig)
-        qom.init_from_config(conf)
-
-        org = qom.organization_login('testorg')
-        assert isinstance(org, QuayOrganization)
-
-    def test_organization_login_org_not_found(self, mocked_quay_io):
-        """Test login to not configured org"""
-        qom = QuayOrganizationManager()
-        conf = Config(TestConfig)
-        qom.init_from_config(conf)
-        with pytest.raises(OMPSOrganizationNotFound):
-            qom.organization_login('org_not_configured')
-
-    def test_organization_login_failed(self, mocked_failed_quay_login):
-        """Test login with invalid credentials"""
-        qom = QuayOrganizationManager()
-        # credentials are valid here, failure is mocked
-        conf = Config(TestConfig)
-        qom.init_from_config(conf)
-        with pytest.raises(QuayLoginError):
-            qom.organization_login('testorg')
 
 
 class TestQuayOrganization:
@@ -216,7 +186,7 @@ class TestQuayOrganization:
         org = "test_org"
         repo = "test_repo"
 
-        qo = QuayOrganization(org, "token")
+        qo = QuayOrganization(org, TOKEN)
         (flexmock(qo)
          .should_receive('get_releases_raw')
          .and_return(["1.0.0", "1.0.1-random", "1.2.0"])
@@ -232,7 +202,7 @@ class TestQuayOrganization:
         repo = "test_repo"
         version = '1.2.3'
 
-        qo = QuayOrganization(org, "token")
+        qo = QuayOrganization(org, TOKEN)
 
         with requests_mock.Mocker() as m:
             m.delete(
@@ -252,7 +222,7 @@ class TestQuayOrganization:
         repo = "test_repo"
         version = '1.2.3'
 
-        qo = QuayOrganization(org, "token")
+        qo = QuayOrganization(org, TOKEN)
 
         with requests_mock.Mocker() as m:
             m.delete(

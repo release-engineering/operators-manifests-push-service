@@ -4,11 +4,12 @@
 #
 import logging
 
-from flask import jsonify
+from flask import jsonify, request
 import requests
 
 from . import API
-from omps.quay import QUAY_ORG_MANAGER
+from omps.api.common import extract_auth_token
+from omps.quay import QuayOrganization
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,8 @@ def delete_package_release(organization, repo, version=None):
     :param version: version of operator manifest
     :return: HTTP response
     """
-    quay_org = QUAY_ORG_MANAGER.organization_login(organization)
+    token = extract_auth_token(request)
+    quay_org = QuayOrganization(organization, token)
 
     # quay.io may contain OMPS incompatible release version format string
     # but we want to be able to delete everything there, thus using _raw
