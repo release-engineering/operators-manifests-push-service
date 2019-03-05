@@ -16,9 +16,10 @@ class OMPS(object):
         _organization: Organization configured in OMPS.
             This is the namespace to be used in the Quay App Registry.
     """
-    def __init__(self, api_url, organization):
+    def __init__(self, api_url, organization, quay_token):
         self._api_url = api_url
         self._organization = organization
+        self._auth = {'Authorization': quay_token}
 
     @property
     def organization(self):
@@ -95,13 +96,13 @@ class QuayAppRegistry(object):
         self._token = None
 
     def login(self, username, password):
-        """Login to Quay.
+        """Login to Quay and store token.
 
         Args:
             username, password: Credentials used to log in.
 
         Returns:
-            Authorization token.
+            None.
 
         Raises:
             HTTPError: Login failed.
@@ -118,6 +119,10 @@ class QuayAppRegistry(object):
         r.raise_for_status()
 
         self._token = r.json()['token']
+
+    @property
+    def token(self):
+        return self._token
 
     def get_releases(self, namespace, package):
         """Get all releases for a package.
