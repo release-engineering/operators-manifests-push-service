@@ -45,6 +45,31 @@ docker run --rm -p 8080:8080 -e WORKERS_NUM=6 omps:latest
 
 ## Usage
 
+## Authorization
+
+Users are expected to use quay.io token that can be acquired by the following
+command:
+
+```bash
+TOKEN=$(curl -sH "Content-Type: application/json" -XPOST https://quay.io/cnr/api/v1/users/login -d '
+{
+    "user": {
+        "username": "'"${QUAY_USERNAME}"'",
+        "password": "'"${QUAY_PASSWORD}"'"
+    }
+}' | jq -r '.token')
+```
+
+Quay token must be passed to OMPS app via HTTP `Authorization` header
+
+```bash
+curl -H "Authorization: ${TOKEN}" ...
+```
+
+Is recommended to use [robot accounts](https://docs.quay.io/glossary/robot-accounts.html).
+
+
+
 ### Uploading operators manifests from zipfile
 
 Operator manifests files must be added to zip archive
@@ -95,18 +120,23 @@ Error messages have following format:
 |-----------|------------------------|---------------------|
 |400| OMPSUploadedFileError | Uploaded file didn't meet expectations (not a zip file, too big after unzip, corrupted zip file) |
 |400| OMPSExpectedFileError | Expected file hasn't been attached |
-|404| OMPSOrganizationNotFound | Requested organization is not configured on server side |
-|500| QuayLoginError | Server cannot login to quay, probably misconfiguration |
+|403| OMPSAuthorizationHeaderRequired| No `Authorization` header found in request|
 |500| QuayCourierError | operator-courier module raised exception during building and pushing manifests to quay|
 |500| QuayPackageError | Failed to get information about application packages from quay |
 
 #### Example
 ```bash
-curl -X POST https://example.com/v1/myorg/myrepo/zipfile -F "file=@manifests.zip"
+curl \
+  -H "Authorization: ${TOKEN}" \
+  -X POST https://example.com/v1/myorg/myrepo/zipfile \
+  -F "file=@manifests.zip"
 ```
 or with explicit release version
 ```bash
-curl -X POST https://example.com/v1/myorg/myrepo/zipfile/1.1.5 -F "file=@manifests.zip"
+curl \
+  -H "Authorization: ${TOKEN}" \
+  -X POST https://example.com/v1/myorg/myrepo/zipfile/1.1.5 \
+  -F "file=@manifests.zip"
 ```
 
 ### Removing released operators manifests
@@ -150,19 +180,22 @@ Error messages have following format:
 
 | HTTP Code / `status` |  `error`    |  Explanation        |
 |-----------|------------------------|---------------------|
-|404| OMPSOrganizationNotFound | Requested organization is not configured on server side |
+|403| OMPSAuthorizationHeaderRequired| No `Authorization` header found in request|
 |404| QuayPackageNotFound | Requested package doesn't exist in quay |
-|500| QuayLoginError | Server cannot login to quay, probably misconfiguration |
 |500| QuayPackageError | Getting information about released packages or deleting failed |
 
 
 #### Examples
 ```bash
-curl -X DELETE https://example.com/v1/myorg/myrepo
+curl \
+  -H "Authorization: ${TOKEN}" \
+  -X DELETE https://example.com/v1/myorg/myrepo
 ```
 or with explicit release version
 ```bash
-curl -X DELETE https://example.com/v1/myorg/myrepo/1.1.5
+curl \
+   -H "Authorization: ${TOKEN}" \
+   -X DELETE https://example.com/v1/myorg/myrepo/1.1.5
 ```
 
 
