@@ -52,6 +52,28 @@ class OMPS(object):
 
         return requests.post(url, files=files)
 
+    def delete(self, organization, repo, version=None):
+        """Delete one, more or all releases from a repo.
+
+        Args:
+            organization: Name of the organization where the repo belongs.
+            repo: Repository from where the release will be deleted.
+            version: Version to be deleted. If None, the repo will be cleaned up.
+
+        Returns:
+            A requests.Response object.
+            http://docs.python-requests.org/en/master/api/#requests.Response
+
+        Raises: None.
+        """
+        url = '{api}/{org}/{repo}{version}'.format(
+            api=self._api_url,
+            org=organization,
+            repo=repo,
+            version='' if not version else '/' + version)
+
+        return requests.delete(url)
+
 
 class QuayAppRegistry(object):
     """Quay App Registry.
