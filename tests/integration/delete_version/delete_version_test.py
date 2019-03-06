@@ -6,6 +6,7 @@
 import shutil
 import requests
 import pytest
+from tests.integration.constants import TEST_PACKAGE
 
 
 def test_delete_version(omps, quay, tmp_path):
@@ -15,21 +16,21 @@ def test_delete_version(omps, quay, tmp_path):
     the matching release is deleted.
     """
     version = '10.9.8'
-    if not quay.get_release(omps.organization, 'int-test', version):
+    if not quay.get_release(omps.organization, TEST_PACKAGE, version):
         archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                       'tests/integration/push_archive/artifacts/')
-        response = omps.upload(repo='int-test', version=version, archive=archive)
+        response = omps.upload(repo=TEST_PACKAGE, version=version, archive=archive)
         response.raise_for_status()
 
-    response = omps.delete(omps.organization, 'int-test', version)
+    response = omps.delete(omps.organization, TEST_PACKAGE, version)
 
     assert response.status_code == requests.codes.ok
     assert response.json() == {
         'deleted': [version],
         'organization': omps.organization,
-        'repo': 'int-test',
+        'repo': TEST_PACKAGE,
     }
-    assert not quay.get_release(omps.organization, 'int-test', version)
+    assert not quay.get_release(omps.organization, TEST_PACKAGE, version)
 
 
 def test_version_does_not_exist(omps, quay, tmp_path):
@@ -39,18 +40,18 @@ def test_version_does_not_exist(omps, quay, tmp_path):
     """
     # Ensure there is at least one more release besides the one to be deleted.
     version = '8.0.1'
-    if not quay.get_release(omps.organization, 'int-test', version):
+    if not quay.get_release(omps.organization, TEST_PACKAGE, version):
         archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                       'tests/integration/push_archive/artifacts/')
-        response = omps.upload(repo='int-test', version=version, archive=archive)
+        response = omps.upload(repo=TEST_PACKAGE, version=version, archive=archive)
         response.raise_for_status()
 
     # Ensure the release to be deleted is not in the package.
     version = '10.9.8'
-    if quay.get_release(omps.organization, 'int-test', version):
-        quay.delete_releases(omps.organization + '/int-test', [version])
+    if quay.get_release(omps.organization, TEST_PACKAGE, version):
+        quay.delete_releases('/'.join([omps.organization, TEST_PACKAGE]), [version])
 
-    response = omps.delete(omps.organization, 'int-test', version)
+    response = omps.delete(omps.organization, TEST_PACKAGE, version)
 
     assert response.status_code == requests.codes.not_found
     assert response.json()['error'] == 'QuayPackageNotFound'
@@ -63,23 +64,23 @@ def test_delete_all_versions(omps, quay, tmp_path):
     all the releases of the package are deleted.
     """
     # Ensure there are at least 2 releases.
-    if len(quay.get_releases(omps.organization, 'int-test')) < 2:
+    if len(quay.get_releases(omps.organization, TEST_PACKAGE)) < 2:
         archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                       'tests/integration/push_archive/artifacts/')
         for version in ['8.0.0', '8.0.1']:
-            response = omps.upload(repo='int-test', version=version, archive=archive)
+            response = omps.upload(repo=TEST_PACKAGE, version=version, archive=archive)
 
     versions = [r['release'] for r in
-                quay.get_releases(omps.organization, 'int-test')]
+                quay.get_releases(omps.organization, TEST_PACKAGE)]
     assert len(versions) > 1
 
-    response = omps.delete(omps.organization, 'int-test')
+    response = omps.delete(omps.organization, TEST_PACKAGE)
 
     assert response.status_code == requests.codes.ok
     assert response.json() == {
         'deleted': versions,
         'organization': omps.organization,
-        'repo': 'int-test',
+        'repo': TEST_PACKAGE,
     }
 
 
@@ -87,7 +88,7 @@ def test_organization_unaccessible_in_quay(omps):
     """
     Delete fails, if the organization is not configured with OMPS.
     """
-    response = omps.delete('no-such-organization', 'int-test', '10.0.1')
+    response = omps.delete('no-such-organization', TEST_PACKAGE, '10.0.1')
 
     assert response.status_code == requests.codes.internal_server_error
     assert response.json()['error'] == 'QuayPackageError'
@@ -128,24 +129,24 @@ def test_increment_version_after_delete(omps, quay, tmp_path,
     """
     # Ensure only certain releases do exist.
     releases = set(r['release'] for r in
-                   quay.get_releases(omps.organization, 'int-test'))
+                   quay.get_releases(omps.organization, TEST_PACKAGE))
     versions = set(['3.0.0', '4.0.1', '6.0.2'])
     to_delete = releases - versions
     to_upload = versions - releases
-    quay.delete_releases(omps.organization + '/int-test', to_delete)
+    quay.delete_releases('/'.join([omps.organization, TEST_PACKAGE]), to_delete)
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
     for version in to_upload:
-        response = omps.upload(repo='int-test', version=version, archive=archive)
+        response = omps.upload(repo=TEST_PACKAGE, version=version, archive=archive)
         response.raise_for_status()
 
     # Delete a release.
-    response = omps.delete(omps.organization, 'int-test', delete_version)
+    response = omps.delete(omps.organization, TEST_PACKAGE, delete_version)
     response.raise_for_status()
 
     # Push a new one, without specifying the version.
-    response = omps.upload(repo='int-test', archive=archive)
+    response = omps.upload(repo=TEST_PACKAGE, archive=archive)
 
     assert response.status_code == requests.codes.ok
     assert response.json()['version'] == next_version
-    assert quay.get_release(omps.organization, 'int-test', next_version)
+    assert quay.get_release(omps.organization, TEST_PACKAGE, next_version)
