@@ -79,6 +79,31 @@ def test_push_zipfile_unauthorized(client, endpoint_push_zipfile):
     assert rv_json['error'] == 'OMPSAuthorizationHeaderRequired'
 
 
+@pytest.mark.usefixtures("mocked_quay_io")
+def test_push_zipfile_encrypted(
+        client, encrypted_zip_archive,
+        endpoint_push_zipfile, auth_header):
+    """Test if proper error is returned when the attached zip file
+    is encrypted
+    """
+    with open(encrypted_zip_archive, 'rb') as f:
+        data = {
+            'file': (f, f.name),
+        }
+        rv = client.post(
+            endpoint_push_zipfile.url_path,
+            headers=auth_header,
+            data=data,
+            content_type='multipart/form-data',
+        )
+
+    assert rv.status_code == 400, rv.get_json()
+    rv_json = rv.get_json()
+    assert rv_json['status'] == 400
+    assert rv_json['error'] == 'OMPSUploadedFileError'
+    assert 'is encrypted' in rv_json['message']
+
+
 def test_push_koji_nvr(client):
     """Test REST API for pushing operators form koji by NVR"""
     rv = client.post('/v1/organization-X/repo-Y/koji/nvr-Z')

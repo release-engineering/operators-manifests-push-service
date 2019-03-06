@@ -201,8 +201,8 @@ def test_upload_password_protected_zip(omps):
     response = omps.upload(organization=TEST_NAMESPACE,
                            repo=TEST_PACKAGE, archive=archive)
 
-    assert response.status_code == requests.codes.internal_server_error
-    assert response.json()['error'] == 'InternalServerError'
+    assert response.status_code == requests.codes.bad_request
+    assert response.json()['error'] == 'OMPSUploadedFileError'
     assert 'is encrypted' in response.json()['message']
 
 

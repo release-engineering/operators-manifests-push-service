@@ -59,6 +59,12 @@ def valid_manifests_archive(datadir, tmpdir):
 
 
 @pytest.fixture
+def encrypted_zip_archive(datadir):
+    """Path to the encrypted zip archive created in advance"""
+    return os.path.join(datadir, 'encrypted.zip')
+
+
+@pytest.fixture
 def mocked_quay_io():
     """Mocking quay.io answers"""
     with requests_mock.Mocker() as m:
