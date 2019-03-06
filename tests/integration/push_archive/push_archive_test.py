@@ -8,7 +8,7 @@ import pytest
 import requests
 
 
-def test_initial_upload(omps, quay_app_registry, tmp_path):
+def test_initial_upload(omps, quay, tmp_path):
     """
     When uploading an archive to a repository which is empty,
     and no version is specified during the upload
@@ -17,8 +17,8 @@ def test_initial_upload(omps, quay_app_registry, tmp_path):
 
     # Make sure there 'int-test' operator is empty.
     releases = [r['release'] for r in
-                quay_app_registry.get_releases(omps.organization, 'int-test')]
-    quay_app_registry.delete_releases(omps.organization + '/int-test', releases)
+                quay.get_releases(omps.organization, 'int-test')]
+    quay.delete_releases(omps.organization + '/int-test', releases)
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
@@ -28,13 +28,13 @@ def test_initial_upload(omps, quay_app_registry, tmp_path):
     assert response['repo'] == 'int-test'
     assert response['version'] == '1.0.0'
 
-    releases = quay_app_registry.get_releases(omps.organization, 'int-test')
+    releases = quay.get_releases(omps.organization, 'int-test')
     assert releases
     assert len(releases) == 1
     assert releases[0]['release'] == '1.0.0'
 
 
-def test_upload_with_version(omps, quay_app_registry, tmp_path):
+def test_upload_with_version(omps, quay, tmp_path):
     """
     When specifying the version for an upload,
     then the release is created with the version specified.
@@ -42,8 +42,8 @@ def test_upload_with_version(omps, quay_app_registry, tmp_path):
     version = '4.3.2'
 
     # Make sure the version to be uploaded does not exist.
-    if quay_app_registry.get_release(omps.organization, 'int-test', version):
-        quay_app_registry.delete_releases(omps.organization + '/int-test', [version])
+    if quay.get_release(omps.organization, 'int-test', version):
+        quay.delete_releases(omps.organization + '/int-test', [version])
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
@@ -53,10 +53,10 @@ def test_upload_with_version(omps, quay_app_registry, tmp_path):
     assert response['repo'] == 'int-test'
     assert response['version'] == version
 
-    assert quay_app_registry.get_release(omps.organization, 'int-test', version)
+    assert quay.get_release(omps.organization, 'int-test', version)
 
 
-def test_increment_version(omps, quay_app_registry, tmp_path):
+def test_increment_version(omps, quay, tmp_path):
     """
     When no version is specified, and there already are some releases in
         the package,
@@ -71,12 +71,12 @@ def test_increment_version(omps, quay_app_registry, tmp_path):
 
     # Make sure that only the expected releases are present
     package_releases = set(release['release'] for release in
-                           quay_app_registry.get_releases(omps.organization, 'int-test'))
+                           quay.get_releases(omps.organization, 'int-test'))
     for release in expected_releases - package_releases:
         omps.upload(repo='int-test', version=release, archive=archive)
 
-    quay_app_registry.delete_releases(omps.organization + '/int-test',
-                                      package_releases - expected_releases)
+    quay.delete_releases(omps.organization + '/int-test',
+                         package_releases - expected_releases)
 
     response = omps.upload(repo='int-test', archive=archive).json()
 
@@ -84,10 +84,10 @@ def test_increment_version(omps, quay_app_registry, tmp_path):
     assert response['repo'] == 'int-test'
     assert response['version'] == next_release
 
-    assert quay_app_registry.get_release(omps.organization, 'int-test', next_release)
+    assert quay.get_release(omps.organization, 'int-test', next_release)
 
 
-def test_version_exists(omps, quay_app_registry, tmp_path):
+def test_version_exists(omps, quay, tmp_path):
     """
     When the version already exists in the package,
     then creating the new release fails.
@@ -97,7 +97,7 @@ def test_version_exists(omps, quay_app_registry, tmp_path):
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
 
-    if not quay_app_registry.get_release(omps.organization, 'int-test', release_used):
+    if not quay.get_release(omps.organization, 'int-test', release_used):
         omps.upload(repo='int-test', version=release_used, archive=archive)
 
     response = omps.upload(repo='int-test', version=release_used, archive=archive)
