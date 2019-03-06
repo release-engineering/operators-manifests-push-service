@@ -15,11 +15,13 @@ class OMPS(object):
         _api_url: URL of the OMPS API. Including version, excluding trailing /.
         _organization: Organization configured in OMPS.
             This is the namespace to be used in the Quay App Registry.
+        _headers: Headers to be used, when talking to Quay.
+            No header will be set if None.
     """
-    def __init__(self, api_url, organization, quay_token):
+    def __init__(self, api_url, organization, quay_token=None):
         self._api_url = api_url
         self._organization = organization
-        self._auth = {'Authorization': quay_token}
+        self._headers = {'Authorization': quay_token} if quay_token else {}
 
     @property
     def organization(self):
@@ -51,7 +53,7 @@ class OMPS(object):
             version='' if not version else '/' + version)
         files = {field: open(archive, 'rb')}
 
-        return requests.post(url, files=files, headers=self._auth)
+        return requests.post(url, files=files, headers=self._headers)
 
     def delete(self, organization, repo, version=None):
         """Delete one, more or all releases from a repo.
@@ -73,7 +75,7 @@ class OMPS(object):
             repo=repo,
             version='' if not version else '/' + version)
 
-        return requests.delete(url, headers=self._auth)
+        return requests.delete(url, headers=self._headers)
 
 
 class QuayAppRegistry(object):
