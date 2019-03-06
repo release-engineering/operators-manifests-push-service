@@ -39,6 +39,5 @@ def omps(quay):
     Raises: None.
     """
     api_url = os.getenv('OMPS_INT_TEST_OMPS_URL')
-    organization = os.getenv('OMPS_INT_TEST_OMPS_ORG')
 
-    return OMPS(api_url, organization, quay.token)
+    return OMPS(api_url, quay.token)
