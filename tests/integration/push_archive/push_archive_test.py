@@ -6,6 +6,7 @@
 import shutil
 import pytest
 import requests
+from tests.integration.constants import TEST_PACKAGE
 
 
 def test_initial_upload(omps, quay, tmp_path):
@@ -15,20 +16,20 @@ def test_initial_upload(omps, quay, tmp_path):
     then a new release is created with version 1.0.0
     """
 
-    # Make sure there 'int-test' operator is empty.
+    # Make sure there TEST_PACKAGE operator is empty.
     releases = [r['release'] for r in
-                quay.get_releases(omps.organization, 'int-test')]
-    quay.delete_releases(omps.organization + '/int-test', releases)
+                quay.get_releases(omps.organization, TEST_PACKAGE)]
+    quay.delete_releases('/'.join([omps.organization, TEST_PACKAGE]), releases)
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
-    response = omps.upload(repo='int-test', archive=archive).json()
+    response = omps.upload(repo=TEST_PACKAGE, archive=archive).json()
 
     assert response['organization'] == omps.organization
-    assert response['repo'] == 'int-test'
+    assert response['repo'] == TEST_PACKAGE
     assert response['version'] == '1.0.0'
 
-    releases = quay.get_releases(omps.organization, 'int-test')
+    releases = quay.get_releases(omps.organization, TEST_PACKAGE)
     assert releases
     assert len(releases) == 1
     assert releases[0]['release'] == '1.0.0'
@@ -42,18 +43,18 @@ def test_upload_with_version(omps, quay, tmp_path):
     version = '4.3.2'
 
     # Make sure the version to be uploaded does not exist.
-    if quay.get_release(omps.organization, 'int-test', version):
-        quay.delete_releases(omps.organization + '/int-test', [version])
+    if quay.get_release(omps.organization, TEST_PACKAGE, version):
+        quay.delete_releases('/'.join([omps.organization, TEST_PACKAGE]), [version])
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
-    response = omps.upload(repo='int-test', version=version, archive=archive).json()
+    response = omps.upload(repo=TEST_PACKAGE, version=version, archive=archive).json()
 
     assert response['organization'] == omps.organization
-    assert response['repo'] == 'int-test'
+    assert response['repo'] == TEST_PACKAGE
     assert response['version'] == version
 
-    assert quay.get_release(omps.organization, 'int-test', version)
+    assert quay.get_release(omps.organization, TEST_PACKAGE, version)
 
 
 def test_increment_version(omps, quay, tmp_path):
@@ -71,20 +72,20 @@ def test_increment_version(omps, quay, tmp_path):
 
     # Make sure that only the expected releases are present
     package_releases = set(release['release'] for release in
-                           quay.get_releases(omps.organization, 'int-test'))
+                           quay.get_releases(omps.organization, TEST_PACKAGE))
     for release in expected_releases - package_releases:
-        omps.upload(repo='int-test', version=release, archive=archive)
+        omps.upload(repo=TEST_PACKAGE, version=release, archive=archive)
 
-    quay.delete_releases(omps.organization + '/int-test',
+    quay.delete_releases('/'.join([omps.organization, TEST_PACKAGE]),
                          package_releases - expected_releases)
 
-    response = omps.upload(repo='int-test', archive=archive).json()
+    response = omps.upload(repo=TEST_PACKAGE, archive=archive).json()
 
     assert response['organization'] == omps.organization
-    assert response['repo'] == 'int-test'
+    assert response['repo'] == TEST_PACKAGE
     assert response['version'] == next_release
 
-    assert quay.get_release(omps.organization, 'int-test', next_release)
+    assert quay.get_release(omps.organization, TEST_PACKAGE, next_release)
 
 
 def test_version_exists(omps, quay, tmp_path):
@@ -97,10 +98,10 @@ def test_version_exists(omps, quay, tmp_path):
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
 
-    if not quay.get_release(omps.organization, 'int-test', release_used):
-        omps.upload(repo='int-test', version=release_used, archive=archive)
+    if not quay.get_release(omps.organization, TEST_PACKAGE, release_used):
+        omps.upload(repo=TEST_PACKAGE, version=release_used, archive=archive)
 
-    response = omps.upload(repo='int-test', version=release_used, archive=archive)
+    response = omps.upload(repo=TEST_PACKAGE, version=release_used, archive=archive)
 
     assert response.status_code == requests.codes.server_error
     assert response.json()['error'] == 'QuayCourierError'
@@ -121,7 +122,7 @@ def test_incorrect_version(omps, tmp_path, version):
     """
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
-    response = omps.upload(repo='int-test', version=version, archive=archive)
+    response = omps.upload(repo=TEST_PACKAGE, version=version, archive=archive)
 
     assert response.status_code == requests.codes.bad_request
     assert response.json()['error'] == 'OMPSInvalidVersionFormat'
@@ -134,7 +135,7 @@ def test_filetype_not_supported(omps, tmpdir):
     then the push fails.
     """
     archive = tmpdir.join('not-a-zip.zip').ensure()
-    response = omps.upload(repo='int-test', archive=archive)
+    response = omps.upload(repo=TEST_PACKAGE, archive=archive)
 
     assert response.status_code == requests.codes.bad_request
     assert response.json()['error'] == 'OMPSUploadedFileError'
@@ -147,7 +148,7 @@ def test_file_extension_not_zip(omps, tmpdir):
     then the push fails.
     """
     archive = tmpdir.join('archive.tar.gz').ensure()
-    response = omps.upload(repo='int-test', archive=archive)
+    response = omps.upload(repo=TEST_PACKAGE, archive=archive)
 
     assert response.status_code == requests.codes.bad_request
     assert response.json()['error'] == 'OMPSUploadedFileError'
@@ -160,7 +161,7 @@ def test_no_file_field(omps, tmp_path):
     """
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
-    response = omps.upload(repo='int-test', archive=archive, field='archive')
+    response = omps.upload(repo=TEST_PACKAGE, archive=archive, field='archive')
 
     assert response.status_code == requests.codes.bad_request
     assert response.json()['error'] == 'OMPSExpectedFileError'
@@ -174,7 +175,7 @@ def test_organization_unaccessible_in_quay(omps, tmp_path):
     organization = 'martian-green-operators'
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
-    response = omps.upload(repo='int-test', archive=archive,
+    response = omps.upload(repo=TEST_PACKAGE, archive=archive,
                            organization=organization)
 
     assert response.status_code == requests.codes.internal_server_error
@@ -187,7 +188,7 @@ def test_upload_password_protected_zip(omps):
     Push fails, if the ZIP-file is password-protected.
     """
     archive = 'tests/integration/push_archive/encrypted.zip'
-    response = omps.upload(repo='int-test', archive=archive)
+    response = omps.upload(repo=TEST_PACKAGE, archive=archive)
 
     assert response.status_code == requests.codes.internal_server_error
     assert response.json()['error'] == 'InternalServerError'
@@ -200,7 +201,7 @@ def test_upload_invalid_artifact(omps, tmp_path):
     """
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/invalid_artifacts/')
-    response = omps.upload(repo='int-test', archive=archive)
+    response = omps.upload(repo=TEST_PACKAGE, archive=archive)
 
     assert response.status_code == requests.codes.internal_server_error
     assert response.json()['error'] == 'QuayCourierError'
