@@ -84,11 +84,17 @@ def extract_zip_file(
                     uncompressed_size, max_uncompressed_size
                 ))
 
-        bad_file = archive.testzip()
+        try:
+            bad_file = archive.testzip()
+        except RuntimeError as e:
+            # trying to open an encrypted zip file without a password
+            raise OMPSUploadedFileError(str(e))
+
         if bad_file is not None:
             raise OMPSUploadedFileError(
                 "CRC check failed for file {} in archive".format(bad_file)
             )
+
         archive.extractall(target_dir)
         archive.close()
 
