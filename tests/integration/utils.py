@@ -13,30 +13,21 @@ class OMPS(object):
 
     Attributes:
         _api_url: URL of the OMPS API. Including version, excluding trailing /.
-        _organization: Organization configured in OMPS.
-            This is the namespace to be used in the Quay App Registry.
         _headers: Headers to be used, when talking to Quay.
             No header will be set if None.
     """
-    def __init__(self, api_url, organization, quay_token=None):
+    def __init__(self, api_url, quay_token=None):
         self._api_url = api_url
-        self._organization = organization
         self._headers = {'Authorization': quay_token} if quay_token else {}
 
-    @property
-    def organization(self):
-        """Organization configured in OMPS."""
-        return self._organization
-
-    def upload(self, repo, archive, organization=None, version=None,
+    def upload(self, organization, repo, archive, version=None,
                field='file'):
         """Create a new release for a package by uploading an archive.
 
         Args:
             repo: Repository where the new release is uploaded.
-            archive: Path of the archive to upload.
             organization: Name of the organization where the repo belongs.
-                If None, the organization configured in OMPS is used.
+            archive: Path of the archive to upload.
             version: Version to be used for this release.
                 If None, OMPS will create it.
 
@@ -48,7 +39,7 @@ class OMPS(object):
         """
         url = '{api}/{org}/{repo}/zipfile{version}'.format(
             api=self._api_url,
-            org=organization or self._organization,
+            org=organization,
             repo=repo,
             version='' if not version else '/' + version)
         files = {field: open(archive, 'rb')}
