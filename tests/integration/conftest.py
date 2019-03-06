@@ -9,7 +9,7 @@ from .utils import OMPS, QuayAppRegistry
 
 
 @pytest.fixture(scope='session')
-def quay_app_registry():
+def quay():
     """Quay App Registry used for testing.
 
     Args: None.
@@ -28,7 +28,7 @@ def quay_app_registry():
 
 
 @pytest.fixture(scope='session')
-def omps(quay_app_registry):
+def omps(quay):
     """OMPS used for testing.
 
     Args: None.
@@ -38,4 +38,4 @@ def omps(quay_app_registry):
     api_url = os.getenv('OMPS_INT_TEST_OMPS_URL')
     organization = os.getenv('OMPS_INT_TEST_OMPS_ORG')
 
-    return OMPS(api_url, organization, quay_app_registry.token)
+    return OMPS(api_url, organization, quay.token)
