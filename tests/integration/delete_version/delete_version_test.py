@@ -83,15 +83,15 @@ def test_delete_all_versions(omps, quay, tmp_path):
     }
 
 
-def test_organization_not_configured(omps):
+def test_organization_unaccessible_in_quay(omps):
     """
     Delete fails, if the organization is not configured with OMPS.
     """
     response = omps.delete('no-such-organization', 'int-test', '10.0.1')
 
-    assert response.status_code == requests.codes.not_found
-    assert response.json()['error'] == 'OMPSOrganizationNotFound'
-    assert 'not found in configuration' in response.json()['message']
+    assert response.status_code == requests.codes.internal_server_error
+    assert response.json()['error'] == 'QuayPackageError'
+    assert 'Unauthorized access' in response.json()['message']
 
 
 def test_package_does_not_exist(omps, quay):

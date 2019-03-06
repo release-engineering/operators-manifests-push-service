@@ -167,7 +167,7 @@ def test_no_file_field(omps, tmp_path):
     assert 'No field "file"' in response.json()['message']
 
 
-def test_organization_not_configured(omps, tmp_path):
+def test_organization_unaccessible_in_quay(omps, tmp_path):
     """
     Push fails, if the organization is not configured in OMPS.
     """
@@ -177,9 +177,9 @@ def test_organization_not_configured(omps, tmp_path):
     response = omps.upload(repo='int-test', archive=archive,
                            organization=organization)
 
-    assert response.status_code == requests.codes.not_found
-    assert response.json()['error'] == 'OMPSOrganizationNotFound'
-    assert 'not found in configuration' in response.json()['message']
+    assert response.status_code == requests.codes.internal_server_error
+    assert response.json()['error'] == 'QuayPackageError'
+    assert 'Cannot retrieve information about package' in response.json()['message']
 
 
 def test_upload_password_protected_zip(omps):
