@@ -51,7 +51,7 @@ class OMPS(object):
             version='' if not version else '/' + version)
         files = {field: open(archive, 'rb')}
 
-        return requests.post(url, files=files)
+        return requests.post(url, files=files, headers=self._auth)
 
     def delete(self, organization, repo, version=None):
         """Delete one, more or all releases from a repo.
@@ -73,7 +73,7 @@ class OMPS(object):
             repo=repo,
             version='' if not version else '/' + version)
 
-        return requests.delete(url)
+        return requests.delete(url, headers=self._auth)
 
 
 class QuayAppRegistry(object):
