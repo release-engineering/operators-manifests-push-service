@@ -13,5 +13,7 @@ matrix:
     - dist: xenial
       python: "3.7"
       env: TOXENV=flake8
+before_install:
+  - sudo apt-get install -y rpm  # for rpm-py-installer (koji requirement)
 install: pip install tox-travis coveralls
 script: tox

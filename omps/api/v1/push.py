@@ -2,6 +2,8 @@
 # Copyright (C) 2019 Red Hat, Inc
 # see the LICENSE file for license
 #
+
+from functools import partial
 import logging
 import os
 from tempfile import NamedTemporaryFile, TemporaryDirectory
@@ -21,6 +23,7 @@ from omps.errors import (
     OMPSExpectedFileError,
     QuayPackageNotFound,
 )
+from omps.koji_util import KOJI
 from omps.quay import QuayOrganization, ReleaseVersion
 
 logger = logging.getLogger(__name__)
@@ -35,7 +38,56 @@ def validate_allowed_extension(filename):
                 extension, ALLOWED_EXTENSIONS))
 
 
-def extract_zip_file(
+def _extract_zip_file(
+    filepath, target_dir,
+    max_uncompressed_size=DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE
+):
+    """Extract zip file into target directory
+
+    :param filepath: path to zip archive file
+    :param target_dir: directory where extracted files will be stored
+    :param max_uncompressed_size: size in Bytes how big data can be accepted
+        after uncompressing
+    """
+    try:
+        archive = zipfile.ZipFile(filepath)
+    except zipfile.BadZipFile as e:
+        raise OMPSUploadedFileError(str(e))
+
+    if logger.isEnabledFor(logging.DEBUG):
+        # log content of zipfile
+        logger.debug(
+            'Content of zip archive:\n%s',
+            '\n'.join(
+                "name={zi.filename}, compress_size={zi.compress_size}, "
+                "file_size={zi.file_size}".format(zi=zipinfo)
+                for zipinfo in archive.filelist
+            )
+        )
+
+    uncompressed_size = sum(zi.file_size for zi in archive.filelist)
+    if uncompressed_size > max_uncompressed_size:
+        raise OMPSUploadedFileError(
+            "Uncompressed archive is larger than limit "
+            "({}B>{}B)".format(
+                uncompressed_size, max_uncompressed_size
+            ))
+
+    try:
+        bad_file = archive.testzip()
+    except RuntimeError as e:
+        # trying to open an encrypted zip file without a password
+        raise OMPSUploadedFileError(str(e))
+
+    if bad_file is not None:
+        raise OMPSUploadedFileError(
+            "CRC check failed for file {} in archive".format(bad_file)
+        )
+    archive.extractall(target_dir)
+    archive.close()
+
+
+def extract_zip_file_from_request(
     req, target_dir,
     max_uncompressed_size=DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE
 ):
@@ -60,43 +112,25 @@ def extract_zip_file(
 
     with NamedTemporaryFile('w', suffix='.zip', dir=target_dir) as tmpf:
         uploaded_file.save(tmpf.name)
-        try:
-            archive = zipfile.ZipFile(tmpf.name)
-        except zipfile.BadZipFile as e:
-            raise OMPSUploadedFileError(str(e))
+        _extract_zip_file(tmpf.name, target_dir,
+                          max_uncompressed_size=max_uncompressed_size)
 
-        if logger.isEnabledFor(logging.DEBUG):
-            # log content of zipfile
-            logger.debug(
-                'Content of uploaded zip archive "%s":\n%s',
-                uploaded_file.filename, '\n'.join(
-                    "name={zi.filename}, compress_size={zi.compress_size}, "
-                    "file_size={zi.file_size}".format(zi=zipinfo)
-                    for zipinfo in archive.filelist
-                )
-            )
 
-        uncompressed_size = sum(zi.file_size for zi in archive.filelist)
-        if uncompressed_size > max_uncompressed_size:
-            raise OMPSUploadedFileError(
-                "Uncompressed archive is larger than limit "
-                "({}B>{}B)".format(
-                    uncompressed_size, max_uncompressed_size
-                ))
+def extract_zip_file_from_koji(
+    nvr, target_dir,
+    max_uncompressed_size=DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE
+):
+    """Store content of operators_manifests zipfile in target_dir
 
-        try:
-            bad_file = archive.testzip()
-        except RuntimeError as e:
-            # trying to open an encrypted zip file without a password
-            raise OMPSUploadedFileError(str(e))
-
-        if bad_file is not None:
-            raise OMPSUploadedFileError(
-                "CRC check failed for file {} in archive".format(bad_file)
-            )
-
-        archive.extractall(target_dir)
-        archive.close()
+    :param nvr: N-V-R of koji build
+    :param target_dir: directory where extracted files will be stored
+    :param max_uncompressed_size: size in Bytes how big data can be accepted
+        after uncompressing
+    """
+    with NamedTemporaryFile('wb', suffix='.zip', dir=target_dir) as tmpf:
+        KOJI.download_manifest_archive(nvr, tmpf)
+        _extract_zip_file(tmpf.name, target_dir,
+                          max_uncompressed_size=max_uncompressed_size)
 
 
 def _get_package_version(quay_org, repo, version=None):
@@ -116,17 +150,18 @@ def _get_package_version(quay_org, repo, version=None):
     return version
 
 
-@API.route("/<organization>/<repo>/zipfile", defaults={"version": None},
-           methods=('POST',))
-@API.route("/<organization>/<repo>/zipfile/<version>", methods=('POST',))
-def push_zipfile(organization, repo, version=None):
+def _zip_flow(*, organization, repo, version, extract_manifest_func,
+              extras_data=None):
     """
-    Push the particular version of operator manifest to registry from
-    the uploaded zipfile
-
-    :param organization: quay.io organization
-    :param repo: target repository
-    :param version: version of operator manifest
+    :param str organization: quay.io organization
+    :param str repo: target repository
+    :param str|None version: version of operator manifest
+    :param Callable[str, int] extract_manifest_func: function to retrieve operator
+        manifests zip file. First argument of function is path to target dir
+        where zip archive content will be extracted, second argument max size
+        of extracted files
+    :param extras_data: extra data added to response
+    :return: JSON response
     """
     token = extract_auth_token(request)
     quay_org = QuayOrganization(organization, token)
@@ -139,11 +174,12 @@ def push_zipfile(organization, repo, version=None):
         'repo': repo,
         'version': version,
     }
+    if extras_data:
+        data.update(extras_data)
 
     with TemporaryDirectory() as tmpdir:
         max_size = current_app.config['ZIPFILE_MAX_UNCOMPRESSED_SIZE']
-        extract_zip_file(request, tmpdir,
-                         max_uncompressed_size=max_size)
+        extract_manifest_func(tmpdir, max_uncompressed_size=max_size)
         extracted_files = os.listdir(tmpdir)
         logger.info("Extracted files: %s", extracted_files)
         data['extracted_files'] = extracted_files
@@ -155,8 +191,30 @@ def push_zipfile(organization, repo, version=None):
     return resp
 
 
-@API.route("/<organization>/<repo>/koji/<nvr>", methods=('POST',))
-def push_koji_nvr(organization, repo, nvr):
+@API.route("/<organization>/<repo>/zipfile", defaults={"version": None},
+           methods=('POST',))
+@API.route("/<organization>/<repo>/zipfile/<version>", methods=('POST',))
+def push_zipfile(organization, repo, version=None):
+    """
+    Push the particular version of operator manifest to registry from
+    the uploaded zipfile
+
+    :param organization: quay.io organization
+    :param repo: target repository
+    :param version: version of operator manifest
+    """
+    return _zip_flow(
+        organization=organization,
+        repo=repo,
+        version=version,
+        extract_manifest_func=partial(extract_zip_file_from_request, request)
+    )
+
+
+@API.route("/<organization>/<repo>/koji/<nvr>", defaults={"version": None},
+           methods=('POST',))
+@API.route("/<organization>/<repo>/koji/<nvr>/<version>", methods=('POST',))
+def push_koji_nvr(organization, repo, nvr, version):
     """
     Get operator manifest from koji by specified NVR and upload operator
     manifest to registry
@@ -164,12 +222,10 @@ def push_koji_nvr(organization, repo, nvr):
     :param repo: target repository
     :param nvr: image NVR from koji
     """
-    data = {
-        'organization': organization,
-        'repo': repo,
-        'nvr': nvr,
-        'msg': 'Not Implemented. Testing only'
-    }
-    resp = jsonify(data)
-    resp.status_code = 200
-    return resp
+    return _zip_flow(
+        organization=organization,
+        repo=repo,
+        version=version,
+        extract_manifest_func=partial(extract_zip_file_from_koji, nvr),
+        extras_data={'nvr': nvr}
+    )

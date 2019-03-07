@@ -14,6 +14,7 @@ RUN dnf -y install \
     python3-gunicorn \
     python3-flask \
     python3-jsonschema \
+    python3-koji \
     python3-requests \
     python3-operator-courier \
     && dnf -y clean all \

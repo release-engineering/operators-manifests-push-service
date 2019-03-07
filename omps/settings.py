@@ -29,6 +29,8 @@ class DevConfig(DefaultConfig):
 
 class TestConfig(DefaultConfig):
     TESTING = True
+    KOJIHUB_URL = 'https://kojihub.example.com/kojihub'
+    KOJIROOT_URL = 'https://koji.example.com/kojiroot'
 
 
 def init_config(app):
@@ -99,6 +101,16 @@ class Config(object):
             'type': str,
             'default': constants.DEFAULT_RELEASE_VERSION,
             'desc': 'Default release version for new operator manifests releases'
+        },
+        'kojihub_url': {
+            'type': str,
+            'default': "https://koji.fedoraproject.org/kojihub",
+            'desc': 'URL to koji hub for API access'
+        },
+        'kojiroot_url': {
+            'type': str,
+            'default': "https://kojipkgs.fedoraproject.org/",
+            'desc': 'URL to koji root where build artifacts are stored'
         },
     }
 

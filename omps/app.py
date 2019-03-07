@@ -9,6 +9,7 @@ from flask import Flask
 
 from .api.v1 import API as API_V1
 from .errors import init_errors_handling
+from .koji_util import KOJI
 from .logger import init_logging
 from .settings import init_config
 
@@ -31,6 +32,7 @@ def _load_config(app):
     conf = init_config(app)
     init_logging(conf)
     logger.debug('Config loaded. Logging initialized')
+    KOJI.initialize(conf)
 
 
 def _init_errors_handling(app):

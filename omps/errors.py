@@ -50,6 +50,26 @@ class OMPSAuthorizationHeaderRequired(OMPSError):
     code = 403
 
 
+class KojiNVRBuildNotFound(OMPSError):
+    """Requested build not found in koji"""
+    code = 404
+
+
+class KojiNotAnOperatorImage(OMPSError):
+    """Requested build is not an operator image"""
+    code = 400
+
+
+class KojiManifestsArchiveNotFound(OMPSError):
+    """Manifest archive not found in koji"""
+    code = 500
+
+
+class KojiError(OMPSError):
+    """Failed to retrieve data from koji"""
+    code = 500
+
+
 def json_error(status, error, message):
     response = jsonify(
         {'status': status,

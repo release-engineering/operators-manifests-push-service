@@ -15,6 +15,8 @@ import requests
 import requests_mock
 
 from omps.app import app
+from omps.koji_util import KOJI, KojiUtil
+from omps.settings import Config, TestConfig
 
 
 @pytest.fixture()
@@ -101,3 +103,29 @@ def mocked_op_courier_push():
         yield
     finally:
         operatorcourier.api.build_verify_and_push = orig
+
+
+@pytest.fixture
+def mocked_koji_archive_download(valid_manifests_archive):
+    """Mock KojiUtil.koji_download_manifest_archive to return valid archive"""
+    def fake_download(nvr, target_fd):
+        with open(valid_manifests_archive, 'rb') as zf:
+            target_fd.write(zf.read())
+            target_fd.flush()
+
+    orig = KOJI.download_manifest_archive
+    try:
+        KOJI.download_manifest_archive = fake_download
+        yield
+    finally:
+        KOJI.download_manifest_archive = orig
+
+
+@pytest.fixture
+def mocked_koji():
+    """Return mocked KojiUtil with session"""
+    conf = Config(TestConfig)
+    ku = KojiUtil()
+    ku.initialize(conf)
+    ku._session = flexmock()
+    return ku

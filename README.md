@@ -22,6 +22,10 @@ class ProdConfig:
     LOG_LEVEL = "INFO"
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     DEFAULT_RELEASE_VERSION = "1.0.0"  # default operator manifest version
+
+    # configuration of Koji URLs
+    KOJIHUB_URL = 'https://koji.fedoraproject.org/kojihub'
+    KOJIROOT_URL = 'https://kojipkgs.fedoraproject.org/'
 ```
 
 ## Running service
@@ -140,6 +144,82 @@ curl \
   -F "file=@manifests.zip"
 ```
 
+### Uploading operators manifests from koji
+
+Downloads operator manifest archive from koji build specified by N-V-R.
+Build must be done by [OSBS](https://osbs.readthedocs.io)
+service which extracts operator manifests from images and stores them as a zip
+archive in koji.
+
+#### Endpoints
+
+* [POST] `/v1/<organization>/<repository>/koji/<nvr>/<version>`
+* [POST] `/v1/<organization>/<repository>/koji/<nvr>`
+
+Operator image build must be specified by N-V-R value from koji.
+
+If `<version>` is omitted:
+* the latest release version will be incremented and used (for example from `2.5.1` to `3.0.0`)
+* for new repository a default initial version will be used (`DEFAULT_RELEASE_VERSION` config option)
+
+`<version>` must be unique for repository. Quay doesn't support overwriting of releases.
+
+#### Replies
+
+**OK**
+
+HTTP code: 200
+
+```json
+{
+  "organization": "organization name",
+  "repo": "repository name",
+  "version": "0.0.1",
+  "nvr": "n-v-r",
+  "extracted_files": ["packages.yml", "..."]
+}
+
+```
+
+**Failures**
+
+Error messages have following format:
+```
+{
+  "status": <http numeric code>,
+  "error": "<error ID string>",
+  "message": "<detailed error description>",
+}
+```
+
+
+| HTTP Code / `status` |  `error`    |  Explanation        |
+|-----------|------------------------|---------------------|
+|400| OMPSUploadedFileError | Uploaded file didn't meet expectations (not a zip file, too big after unzip, corrupted zip file) |
+|400| OMPSInvalidVersionFormat | Invalid version format in URL |
+|400| KojiNotAnOperatorImage | Requested build is not an operator image |
+|403| OMPSAuthorizationHeaderRequired| No `Authorization` header found in request|
+|404| KojiNVRBuildNotFound | Requested build not found in koji |
+|500| KojiManifestsArchiveNotFound | Manifest archive not found in koji build |
+|500| KojiError | Koji generic error (connection failures, etc.) |
+|500| QuayCourierError | operator-courier module raised exception during building and pushing manifests to quay|
+|500| QuayPackageError | Failed to get information about application packages from quay |
+
+
+#### Example
+```bash
+curl \
+  -H "Authorization: ${TOKEN}" \
+  -X POST https://example.com/v1/myorg/myrepo/koji/image-1.2-5
+```
+or with explicit release version
+```bash
+curl \
+  -H "Authorization: ${TOKEN}" \
+  -X POST https://example.com/v1/myorg/myrepo/koji/image-1.2-5/1.1.5
+```
+
+
 ### Removing released operators manifests
 
 
@@ -220,9 +300,18 @@ pip install '.[test]'
 ### Running tests
 
 Project is integrated with tox:
+
+* please install `rpm-devel` (Fedora) or `rpm` (Ubuntu) package to be able
+build `koji` dependency `rpm-py-installer` in `tox`:
+```bash
+sudo dnf install -y rpm-devel
+```
+* run:
 ```bash
 tox
 ```
+
+
 
 To run tests manually, you can use pytest directly:
 ```bash

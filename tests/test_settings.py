@@ -26,6 +26,14 @@ from omps.settings import Config, DefaultConfig
         "DEFAULT_RELEASE_VERSION",
         constants.DEFAULT_RELEASE_VERSION,
     ),
+    (
+        "KOJIHUB_URL",
+        "https://koji.fedoraproject.org/kojihub"
+    ),
+    (
+        "KOJIROOT_URL",
+        "https://kojipkgs.fedoraproject.org/"
+    ),
 ))
 def test_defaults(key, expected):
     """Test if defaults are properly propagated to app config"""
