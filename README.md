@@ -120,6 +120,7 @@ Error messages have following format:
 |-----------|------------------------|---------------------|
 |400| OMPSUploadedFileError | Uploaded file didn't meet expectations (not a zip file, too big after unzip, corrupted zip file) |
 |400| OMPSExpectedFileError | Expected file hasn't been attached |
+|400| OMPSInvalidVersionFormat | Invalid version format in URL |
 |403| OMPSAuthorizationHeaderRequired| No `Authorization` header found in request|
 |500| QuayCourierError | operator-courier module raised exception during building and pushing manifests to quay|
 |500| QuayPackageError | Failed to get information about application packages from quay |
