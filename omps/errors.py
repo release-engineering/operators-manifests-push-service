@@ -40,7 +40,8 @@ class QuayPackageNotFound(OMPSError):
 
 
 class OMPSInvalidVersionFormat(OMPSError):
-    """Invalid version format"""
+    """Quay package version does not follow the required format.
+    The format should be 'x.y.z', where x, y, z are positive integers or 0"""
     code = 400
 
 
