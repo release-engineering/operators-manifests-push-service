@@ -25,6 +25,12 @@ For example: `https://quay.io/api/v1`.
 
 `OMPS_INT_TEST_QUAY_PASSWD`: Password to authenticate with Quay.
 
+`OMPS_INT_TEST_KOJI_NVRS`: A comma-separated list of Koji build NVRs, in the
+following order: a build with valid operator artifacts, a build with invalid
+operator artifacts, a build which is not an operator container build. Used to
+test fetching operator artifacts from Koji.      
+For example: 'valid-operator-container-1.0.0-1,invalid-operator-container-1.0.0-1,etcd-container-1.0.0-1'
+
 All the variables above could be set using [direnv](https://direnv.net/), when
 one navigates to the OMPS repo. See `.envrc.example` for a starting point.
 

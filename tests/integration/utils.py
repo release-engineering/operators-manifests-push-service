@@ -68,6 +68,24 @@ class OMPS(object):
 
         return requests.delete(url, headers=self._headers)
 
+    def fetch_nvr(self, organization, repo, nvr, version=None):
+        """
+
+        Args:
+
+        Returns:
+
+        Raises:
+        """
+        url = '{api}/{org}/{repo}/koji/{nvr}{version}'.format(
+            api=self._api_url,
+            org=organization,
+            repo=repo,
+            nvr=nvr,
+            version='' if not version else '/' + version)
+
+        return requests.post(url, headers=self._headers)
+
 
 class QuayAppRegistry(object):
     """Quay App Registry.
@@ -255,3 +273,18 @@ class QuayAppRegistry(object):
                 package_prefix=package_prefix)
             if package['name'].startswith(name_prefix):
                 self.delete_releases(package['name'], package['releases'])
+
+    def clean_up_package(self, namespace, package):
+        """Delete all versions of a package
+
+        Args:
+            namespace: Namespace.
+            package: Package in the namespace.
+
+        Returns: None
+
+        Raises: None.
+        """
+        releases = [release['release'] for release in
+                    self.get_releases(namespace, package)]
+        self.delete_releases('/'.join([namespace, package]), releases)
