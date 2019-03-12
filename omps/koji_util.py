@@ -83,5 +83,18 @@ class KojiUtil:
         url = self._kojiroot_url + path
         self._file_download(url, target_fd)
 
+    def get_api_version(self):
+        """Returns API version of koji
+
+        :rtype: int
+        :return: Koji API version
+        """
+        try:
+            ver = self.session.getAPIVersion()
+        except Exception as e:
+            raise KojiError(str(e))
+
+        return ver
+
 
 KOJI = KojiUtil()

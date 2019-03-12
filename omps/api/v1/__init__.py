@@ -7,4 +7,4 @@ from flask import Blueprint
 
 API = Blueprint('v1', __name__)
 
-from . import packages, push, about  # noqa, register routes
+from . import packages, push, about, health  # noqa, register routes

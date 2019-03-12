@@ -6,6 +6,7 @@
 import re
 import os
 import shutil
+from unittest.mock import Mock
 import zipfile
 
 from flexmock import flexmock
@@ -122,6 +123,21 @@ def mocked_koji_archive_download(valid_manifests_archive):
 
 
 @pytest.fixture
+def mocked_koji_get_api_version():
+    """Mock global KOJI.get_api_version to return valid version"""
+    def fake_version():
+        return 1
+
+    orig = KOJI.get_api_version
+    try:
+        m = Mock(return_value=1)
+        KOJI.get_api_version = m
+        yield m
+    finally:
+        KOJI.get_api_version = orig
+
+
+@pytest.fixture
 def mocked_koji():
     """Return mocked KojiUtil with session"""
     conf = Config(TestConfig)
@@ -129,3 +145,11 @@ def mocked_koji():
     ku.initialize(conf)
     ku._session = flexmock()
     return ku
+
+
+@pytest.fixture
+def mocked_quay_version():
+    """Return mocked quay api version"""
+    with requests_mock.Mocker() as m:
+        m.get("/cnr/version", json={"cnr-api": "0.0.1-test"})
+        yield m

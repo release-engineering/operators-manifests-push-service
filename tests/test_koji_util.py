@@ -106,3 +106,24 @@ class TestKojiUtil:
                 mocked_koji.download_manifest_archive('test', target_f)
                 target_f.seek(0)
                 assert target_f.read() == data
+
+    def test_get_api_version(self, mocked_koji):
+        """Test get_api_version method"""
+
+        version = 1
+        mocked_koji.session.should_receive('getAPIVersion').and_return(version)
+
+        assert mocked_koji.get_api_version() == version
+
+    def test_get_api_version_error(self, mocked_koji):
+        """Test if get_api_version method raises proper exception"""
+        msg = "something wrong happened"
+        (mocked_koji.session
+         .should_receive('getAPIVersion')
+         .and_raise(Exception(msg))
+         )
+
+        with pytest.raises(KojiError) as ke:
+            mocked_koji.get_api_version()
+
+        assert msg in str(ke)

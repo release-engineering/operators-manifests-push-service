@@ -14,7 +14,12 @@ from omps.errors import (
     QuayPackageError,
     QuayPackageNotFound,
 )
-from omps.quay import QuayOrganization, ReleaseVersion, OrgManager
+from omps.quay import (
+    get_cnr_api_version,
+    QuayOrganization,
+    OrgManager,
+    ReleaseVersion,
+)
 from omps.settings import Config
 
 
@@ -360,3 +365,8 @@ class TestOrgManager:
         assert isinstance(unconfigured_org, QuayOrganization)
         assert not unconfigured_org.public
         assert not unconfigured_org.oauth_access
+
+
+def test_get_cnr_api_version(mocked_quay_version):
+    """Tests of quay.get_cnr_api_version function"""
+    assert get_cnr_api_version() == "0.0.1-test"

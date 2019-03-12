@@ -306,6 +306,71 @@ curl \
    -X DELETE https://example.com/v1/myorg/myrepo/1.1.5
 ```
 
+### Health status
+
+Check status of OMPS service and accessibility of:
+* quay service
+* koji service
+
+If HTTP status is not 200, consider service as not working.
+
+#### Endpoints
+
+* [GET] `/v1/health/ping`
+
+
+#### Replies
+
+**OK**
+
+HTTP code: 200
+
+```json
+{
+  "ok": true,
+  "services": {
+    "koji": {
+      "details": "It works!",
+      "ok": true
+    },
+    "quay": {
+      "details": "It works!",
+      "ok": true
+    }
+  },
+  "status": 200
+}
+```
+
+**Failure**
+
+HTTP code: other than 200
+
+Format of message cannot be guaranteed. However service will try to answer with
+the same format as is listed above, for example:
+
+```json
+{
+  "ok": false,
+  "services": {
+    "koji": {
+      "details": "Cannot connect!",
+      "ok": false
+    },
+    "quay": {
+      "details": "It works!",
+      "ok": true
+    }
+  },
+  "status": 503
+}
+```
+
+
+#### Examples
+```bash
+curl https://example.com/v1/health/ping
+```
 
 ### Telling the current version of OMPS
 

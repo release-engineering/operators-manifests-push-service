@@ -395,4 +395,17 @@ class QuayOrganization:
             raise QuayPackageError(msg)
 
 
+def get_cnr_api_version():
+    """Returns quay's CNR api version
+
+    :raises: HTTPError if version cannot be fetched
+    :rtype: str
+    :returns: API version
+    """
+    url = "https://quay.io/cnr/version"
+    r = requests.get(url)
+    r.raise_for_status()
+    return r.json()['cnr-api']
+
+
 ORG_MANAGER = OrgManager()
