@@ -3,53 +3,60 @@
 # see the LICENSE file for license
 #
 
-import os
 import pytest
+import yaml
 from .utils import OMPS, QuayAppRegistry, Koji
-from .constants import TEST_PACKAGE
 
 
 @pytest.fixture(scope='session')
-def quay():
+def test_env():
+    """Test environment configuration.
+    """
+    with open('test.env') as f:
+        env = yaml.safe_load(f)
+    return env
+
+
+@pytest.fixture(scope='session')
+def quay(test_env):
     """Quay App Registry used for testing.
 
-    Args: None.
+    Args:
+        test_env: Dictionary with test environment configuration.
+
     Yields: An instance of QuayAppRegistry.
     Raises: None.
     """
-    app_registry = QuayAppRegistry(os.getenv('OMPS_INT_TEST_QUAY_URL'))
-    username = os.getenv('OMPS_INT_TEST_QUAY_USER')
-    password = os.getenv('OMPS_INT_TEST_QUAY_PASSWD')
-    app_registry.login(username, password)
+    app_registry = QuayAppRegistry(test_env['quay_url'])
+    app_registry.login(test_env['quay_user'], test_env['quay_password'])
 
     yield app_registry
 
-    organization = os.getenv('OMPS_INT_TEST_OMPS_ORG')
-    app_registry.clean_up(organization, TEST_PACKAGE)
+    app_registry.clean_up(test_env['test_namespace'], test_env['test_package'])
 
 
 @pytest.fixture(scope='session')
-def omps(quay):
+def omps(test_env, quay):
     """OMPS used for testing.
 
     Args:
+        test_env: Dictionary with test environment configuration.
         quay: QuayAppRegistry object, for the Quay instance used by OMPS.
 
     Returns: An instance of OMPS.
     Raises: None.
     """
-    api_url = os.getenv('OMPS_INT_TEST_OMPS_URL')
-
-    return OMPS(api_url, quay.token)
+    return OMPS(test_env['omps_url'], quay.token)
 
 
 @pytest.fixture(scope='session')
-def koji():
+def koji(test_env):
     """Koji instance configured in OMPS.
+
+    Args:
+        test_env: Dictionary with test environment configuration.
 
     Returns: An instance of Koji.
     Raises: None.
     """
-    kojihub = os.getenv('OMPS_INT_TEST_KOJIHUB')
-    kojiroot = os.getenv('OMPS_INT_TEST_KOJIROOT')
-    return Koji(kojihub, kojiroot)
+    return Koji(test_env['kojihub'], test_env['kojiroot'])

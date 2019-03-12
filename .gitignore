@@ -103,5 +103,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# direnv
-.envrc
+# configuration for integration tests
+test.env.yaml

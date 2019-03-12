@@ -9,30 +9,11 @@ Fixtures can be found in `conftest.py`. Utility functions and classes in
 
 ## Configuration
 
-Configuring the OMPS and Quay instances used by the tests can be done using
-a bunch of `OMPS_INT_TEST_*` prefixed environment variables.
+The integration tests should be configured by a `test.env.yaml` file placed in
+the repo.
 
-`OMPS_INT_TEST_OMPS_URL`: URL of the OMPS API to be tested.
-For example: `https://omps.example.com/v1`.
-
-`OMPS_INT_TEST_OMPS_ORG`: Organization configured in the OMPS instance tested.
-For example: 'community-operators'.
-
-`OMPS_INT_TEST_QUAY_URL`: URL of the QUAY API to be used during testing.
-For example: `https://quay.io/api/v1`.
-
-`OMPS_INT_TEST_QUAY_USER`: User to authenticate with Quay.
-
-`OMPS_INT_TEST_QUAY_PASSWD`: Password to authenticate with Quay.
-
-`OMPS_INT_TEST_KOJI_NVRS`: A comma-separated list of Koji build NVRs, in the
-following order: a build with valid operator artifacts, a build with invalid
-operator artifacts, a build which is not an operator container build. Used to
-test fetching operator artifacts from Koji.      
-For example: 'valid-operator-container-1.0.0-1,invalid-operator-container-1.0.0-1,etcd-container-1.0.0-1'
-
-All the variables above could be set using [direnv](https://direnv.net/), when
-one navigates to the OMPS repo. See `.envrc.example` for a starting point.
+See [`example.text.env.yaml`](../../example.test.env.yaml) for the list of configuration options and
+examples.
 
 
 ## Running the tests
