@@ -9,6 +9,7 @@ import re
 from functools import total_ordering
 import logging
 
+from jsonschema import validate
 import requests
 from operatorcourier import api as courier_api
 
@@ -19,6 +20,20 @@ from .errors import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def get_error_msg(res):
+    """Returns error message from quay's response
+
+    :param res: response
+    :rtype: str
+    :return: error message
+    """
+    try:
+        msg = res.json()['error']['message']
+    except Exception:
+        msg = "Unknown error"
+    return msg
 
 
 @total_ordering
@@ -103,19 +118,94 @@ class ReleaseVersion:
         self._z = 0
 
 
+class OrgManager:
+
+    SCHEMA_ORGANIZATIONS = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Configuration for accessing Quay.io organizations",
+        "type": "object",
+        "patternProperties": {
+            "^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$": {
+                "description": "Organization name",
+                "type": "object",
+                "properties": {
+                    "public": {
+                        "description": "True if organization is public",
+                        "type": "boolean",
+                    },
+                    "oauth_token": {
+                        "description": "quay.io application oauth access token",
+                        "type": "string",
+                    },
+                },
+            },
+        },
+        "uniqueItems": True,
+        "additionalProperties": False,
+    }
+
+    @classmethod
+    def validate_conf(cls, organizations):
+        """Validate if config meets the schema expectations
+
+        :param organizations: organizations config
+        :raises jsonschema.ValidationError: when config doesn't meet criteria
+        """
+        validate(organizations, cls.SCHEMA_ORGANIZATIONS)
+
+    def __init__(self):
+        self._organizations = None
+
+    def initialize(self, config):
+        self.validate_conf(config.organizations)
+        self._organizations = config.organizations
+
+    def get_org(self, organization, cnr_token):
+        org_config = self._organizations.get(organization, {})
+        return QuayOrganization(
+            organization,
+            cnr_token,
+            oauth_token=org_config.get('oauth_token'),
+            public=org_config.get('public', False)
+        )
+
+
 class QuayOrganization:
     """Class for operations on organization"""
 
-    def __init__(self, organization, token):
+    def __init__(
+        self, organization, cnr_token, oauth_token=None, public=False
+    ):
         """
         :param organization: organization name
-        :param token: organization login token
+        :param cnr_token: organization login token (cnr endpoint)
+        :param oauth_token: oauth_access_token
+        :param public: organization is public
         """
         self._quay_url = "https://quay.io"
         self._organization = organization
-        self._token = token
+        self._token = cnr_token
+        self._oauth_token = oauth_token
+        self._public = public
+
+    @property
+    def public(self):
+        return self._public
+
+    @property
+    def oauth_access(self):
+        return bool(self._oauth_token)
 
     def push_operator_manifest(self, repo, version, source_dir):
+        """Build, verify and push operators artifact to quay.io registry
+
+        If organization is "public=True" this method ensures that repo will be
+        published.
+
+        :param repo: name of repository
+        :param version: release version
+        :param source_dir: path to directory with manifests
+        """
         try:
             courier_api.build_verify_and_push(
                 self._organization, repo, version, self._token,
@@ -126,6 +216,19 @@ class QuayOrganization:
                 "push_operator_manifest: Operator courier call failed: %s", e
             )
             raise QuayCourierError("Failed to push manifest: {}".format(e))
+        else:
+            if not self.public:
+                logger.debug(
+                    "Organization '%s' is private, skipping publishing",
+                    self._organization)
+                return
+            if not self.oauth_access:
+                logger.error(
+                    "Cannot publish repository %s, Oauth access is not "
+                    "configured for organization %s",
+                    repo, self._organization)
+                return
+            self.publish_repo(repo)
 
     def _get_repo_content(self, repo):
         """Return content of repository"""
@@ -246,10 +349,7 @@ class QuayOrganization:
 
         if r.status_code != requests.codes.ok:
 
-            try:
-                msg = r.json()['error']['message']
-            except Exception:
-                msg = "Unknown error"
+            msg = get_error_msg(r)
 
             if r.status_code == requests.codes.not_found:
                 logger.info("Delete release (404): %s", msg)
@@ -257,3 +357,32 @@ class QuayOrganization:
 
             logger.error("Delete release (%s): %s", r.status_code, msg)
             raise QuayPackageError(msg)
+
+    def publish_repo(self, repo):
+        """Make repository public
+
+        Needs OAUTH access
+
+        :param str repo: repository name
+        """
+        assert self.oauth_access, "Needs Oauth access"
+        endpoint = '/api/v1/repository/{org}/{repo}/changevisibility'.format(
+            org=self._organization,
+            repo=repo,
+        )
+        url = '{q}{e}'.format(q=self._quay_url, e=endpoint)
+        data = {
+            "visibility": "public",
+        }
+        headers = {
+            "Authorization": "Bearer {}".format(self._oauth_token)
+        }
+        logger.debug("Publishing repository %s", repo)
+        r = requests.post(url, headers=headers, json=data)
+        if r.status_code != requests.codes.ok:
+            msg = get_error_msg(r)
+            logger.error("Publishing repository: %s", msg)
+            raise QuayPackageError(msg)
+
+
+ORG_MANAGER = OrgManager()

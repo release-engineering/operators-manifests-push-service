@@ -3,6 +3,8 @@
 # see the LICENSE file for license
 #
 
+import logging
+
 import flexmock
 import requests
 import requests_mock
@@ -12,7 +14,8 @@ from omps.errors import (
     QuayPackageError,
     QuayPackageNotFound,
 )
-from omps.quay import QuayOrganization, ReleaseVersion
+from omps.quay import QuayOrganization, ReleaseVersion, OrgManager
+from omps.settings import Config
 
 
 TOKEN = "basic randomtoken"
@@ -93,16 +96,54 @@ class TestReleaseVersion:
 class TestQuayOrganization:
     """Tests for QuayOrganization class"""
 
+    org = "org"
+    cnr_token = "cnr_token"
+    repo = "repo"
+    version = "0.0.1"
+    source_dir = "/not/important/dir"
+
     def test_push_operator_manifest(self, mocked_op_courier_push):
         """Test for pushing operator manifest"""
-        org = "org"
-        token = "token"
-        repo = "repo"
-        version = "0.0.1"
-        source_dir = "/not/important/dir"
 
-        qo = QuayOrganization(org, token)
-        qo.push_operator_manifest(repo, version, source_dir)
+        qo = QuayOrganization(self.org, self.cnr_token)
+        qo.push_operator_manifest(self.repo, self.version, self.source_dir)
+
+    def test_push_operator_manifest_publish_repo(self, mocked_op_courier_push):
+        """Organizations marked as public will try to publish new
+        repositories"""
+        qo = QuayOrganization(self.org, self.cnr_token,
+                              oauth_token='random', public=True)
+        (flexmock(qo)
+         .should_receive('publish_repo')
+         .and_return(None)
+         .once())
+        qo.push_operator_manifest(self.repo, self.version, self.source_dir)
+
+    def test_push_operator_manifest_publish_repo_no_public(
+            self, mocked_op_courier_push):
+        """Make repos won't be published for non-public organizations"""
+        qo = QuayOrganization(self.org, self.cnr_token,
+                              oauth_token='random', public=False)
+        (flexmock(qo)
+         .should_receive('publish_repo')
+         .and_return(None)
+         .never())
+        qo.push_operator_manifest(self.repo, self.version, self.source_dir)
+
+    def test_push_operator_manifest_publish_repo_no_oauth(
+            self, mocked_op_courier_push, caplog):
+        """Make sure that proper warning msg is logged"""
+        qo = QuayOrganization(self.org, self.cnr_token,
+                              public=True)
+        (flexmock(qo)
+         .should_receive('publish_repo')
+         .and_return(None)
+         .never())
+        caplog.clear()
+        with caplog.at_level(logging.ERROR):
+            qo.push_operator_manifest(self.repo, self.version, self.source_dir)
+        messages = (rec.message for rec in caplog.records)
+        assert any('Oauth access is not configured' in m for m in messages)
 
     def test_get_latest_release_version(self):
         """Test getting the latest release version"""
@@ -232,3 +273,90 @@ class TestQuayOrganization:
             )
             with pytest.raises(exc_class):
                 qo.delete_release(repo, version)
+
+    def test_publish_repo(self):
+        """Test publishing repository"""
+        org = 'testorg'
+        repo = 'testrepo'
+
+        qo = QuayOrganization(org, TOKEN, oauth_token='randomtoken')
+
+        with requests_mock.Mocker() as m:
+            m.post(
+                '/api/v1/repository/{org}/{repo}/changevisibility'.format(
+                    org=org, repo=repo),
+                status_code=requests.codes.ok,
+            )
+            qo.publish_repo(repo)
+
+    def test_publish_repo_error(self):
+        """Test if publishing repository raises proper exception"""
+        org = 'testorg'
+        repo = 'testrepo'
+
+        qo = QuayOrganization(org, TOKEN, oauth_token='randomtoken')
+
+        with requests_mock.Mocker() as m:
+            m.post(
+                '/api/v1/repository/{org}/{repo}/changevisibility'.format(
+                    org=org, repo=repo),
+                status_code=requests.codes.server_error,
+            )
+            with pytest.raises(QuayPackageError):
+                qo.publish_repo(repo)
+
+
+class TestOrgManager:
+    """Tets for OrgManager class"""
+
+    def test_getting_configured_org(self):
+        """Test of getting organization instance when org is configured"""
+
+        class ConfClass:
+            ORGANIZATIONS = {
+                'private_org': {
+                    # 'public': False, # Default
+                    'oauth_token': 'something',
+                },
+                'public_org': {
+                    'public': True,
+                    'oauth_token': 'something_else',
+                },
+                'public_org_no_token': {
+                    'public': True
+                }
+            }
+
+        conf = Config(ConfClass)
+        om = OrgManager()
+        om.initialize(conf)
+
+        priv_org = om.get_org('private_org', 'cnr_token')
+        assert isinstance(priv_org, QuayOrganization)
+        assert not priv_org.public
+        assert priv_org.oauth_access
+
+        public_org = om.get_org('public_org', 'cnr_token')
+        assert isinstance(public_org, QuayOrganization)
+        assert public_org.public
+        assert public_org.oauth_access
+
+        public_org_no_token = om.get_org('public_org_no_token', 'cnr_token')
+        assert isinstance(public_org_no_token, QuayOrganization)
+        assert public_org_no_token.public
+        assert not public_org_no_token.oauth_access
+
+    def test_getting_unconfigured_org(self):
+        """Test of getting organization instance whne org is not configured in
+        settings"""
+        class ConfClass:
+            ORGANIZATIONS = {}
+
+        conf = Config(ConfClass)
+        om = OrgManager()
+        om.initialize(conf)
+
+        unconfigured_org = om.get_org('unconfigured_org', 'cnr_token')
+        assert isinstance(unconfigured_org, QuayOrganization)
+        assert not unconfigured_org.public
+        assert not unconfigured_org.oauth_access

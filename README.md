@@ -26,7 +26,34 @@ class ProdConfig:
     # configuration of Koji URLs
     KOJIHUB_URL = 'https://koji.fedoraproject.org/kojihub'
     KOJIROOT_URL = 'https://kojipkgs.fedoraproject.org/'
+
+    # Organization access
+    organizations = {
+        "public-org": {
+            "public": True,
+            "oauth_token" "application_access_token_goes_here"
+        }
+    }
 ```
+
+### Configuration of quay's organizations
+
+#### Auto publishing new repositories
+
+By default OMPS uses auth tokens for quay's CNR endpoint passed by user in HTTP
+`Authorization` header (see Authorization section).
+
+However CNR endpoint doesn't provide full access to quay applications.
+OMPS needs oauth [access token](https://docs.quay.io/api/) to be able make
+repositories public in chosen organizations.
+
+Required permissions:
+* Administer Repositories
+
+Organizations configuration options:
+* `public`: if `True` OMPS publish all new repositories in that organization
+ (requires `oauth_token`). Default is `False` repositories are private.
+* `oauth_token`: application oauth access token from quay.io
 
 ## Running service
 

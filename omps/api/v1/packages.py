@@ -9,7 +9,7 @@ import requests
 
 from . import API
 from omps.api.common import extract_auth_token
-from omps.quay import QuayOrganization
+from omps.quay import ORG_MANAGER
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,8 @@ def delete_package_release(organization, repo, version=None):
     :param version: version of operator manifest
     :return: HTTP response
     """
-    token = extract_auth_token(request)
-    quay_org = QuayOrganization(organization, token)
+    cnr_token = extract_auth_token(request)
+    quay_org = ORG_MANAGER.get_org(organization, cnr_token)
 
     # quay.io may contain OMPS incompatible release version format string
     # but we want to be able to delete everything there, thus using _raw

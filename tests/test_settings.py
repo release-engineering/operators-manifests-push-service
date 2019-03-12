@@ -34,6 +34,7 @@ from omps.settings import Config, DefaultConfig
         "KOJIROOT_URL",
         "https://kojipkgs.fedoraproject.org/"
     ),
+    ("ORGANIZATIONS", {}),
 ))
 def test_defaults(key, expected):
     """Test if defaults are properly propagated to app config"""
@@ -101,6 +102,50 @@ def test_zipfile_max_uncompressed_size_invalid():
 
     class ConfClass(DefaultConfig):
         ZIPFILE_MAX_UNCOMPRESSED_SIZE = -10
+
+    with pytest.raises(ValueError):
+        Config(ConfClass)
+
+
+def test_organizations():
+    """Test of organization settings"""
+    expected = {
+        'myorg': {
+            'public': False,
+            'oauth_token': 'token',
+        }
+    }
+
+    class ConfClass(DefaultConfig):
+        ORGANIZATIONS = expected
+
+    conf = Config(ConfClass)
+    assert conf.organizations == expected
+
+
+@pytest.mark.parametrize('conf', [
+    {
+        'organization': None
+    }, {
+        'organization_not_allowed/characters': {}
+    }, {
+        'organization': []
+    }, {
+        'organization': {
+            'public': 'No'
+        }
+    }, {
+        'organization': {
+            'oauth_token': 10
+        }
+    }
+
+])
+def test_organizations_invalid(conf):
+    """Test if invalid config is properly reported"""
+
+    class ConfClass(DefaultConfig):
+        ORGANIZATIONS = conf
 
     with pytest.raises(ValueError):
         Config(ConfClass)
