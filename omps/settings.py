@@ -7,7 +7,10 @@ import imp
 import os
 import sys
 
+from jsonschema.exceptions import ValidationError
+
 from . import constants
+from .quay import OrgManager
 
 
 class DefaultConfig:
@@ -17,6 +20,7 @@ class DefaultConfig:
     DEBUG = False
     TESTING = False
     MAX_CONTENT_LENGTH = constants.DEFAULT_MAX_CONTENT_LENGTH
+    ORGANIZATIONS = {}
 
 
 class ProdConfig(DefaultConfig):
@@ -112,6 +116,11 @@ class Config(object):
             'default': "https://kojipkgs.fedoraproject.org/",
             'desc': 'URL to koji root where build artifacts are stored'
         },
+        'organizations': {
+            'type': dict,
+            'default': {},
+            'desc': 'Configuration of organizations'
+        }
     }
 
     def __init__(self, conf_section_obj):
@@ -220,3 +229,10 @@ class Config(object):
             raise ValueError(
                 "default_release_version must be in format 'x.y.z'")
         self._default_release_version = s
+
+    def _setifok_organizations(self, s):
+        try:
+            OrgManager.validate_conf(s)
+        except ValidationError as e:
+            raise ValueError("Organizations config: {}".format(e))
+        self._organizations = s

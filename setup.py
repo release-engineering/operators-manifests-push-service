@@ -36,6 +36,7 @@ setup(
     python_requires='>=3.6, <4',
     install_requires=[
         'Flask==1.0.*',
+        'jsonschema',
         'koji',
         'requests',
         'operator-courier',

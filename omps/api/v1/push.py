@@ -24,7 +24,7 @@ from omps.errors import (
     QuayPackageNotFound,
 )
 from omps.koji_util import KOJI
-from omps.quay import QuayOrganization, ReleaseVersion
+from omps.quay import ReleaseVersion, ORG_MANAGER
 
 logger = logging.getLogger(__name__)
 
@@ -163,8 +163,8 @@ def _zip_flow(*, organization, repo, version, extract_manifest_func,
     :param extras_data: extra data added to response
     :return: JSON response
     """
-    token = extract_auth_token(request)
-    quay_org = QuayOrganization(organization, token)
+    cnr_token = extract_auth_token(request)
+    quay_org = ORG_MANAGER.get_org(organization, cnr_token)
 
     version = _get_package_version(quay_org, repo, version)
     logger.info("Using release version: %s", version)
