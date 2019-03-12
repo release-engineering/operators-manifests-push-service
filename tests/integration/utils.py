@@ -3,10 +3,16 @@
 # see the LICENSE file for license
 #
 
+import os
+import yaml
+import koji
 import requests
+import tarfile
+import zipfile
+from tempfile import TemporaryDirectory
 
 
-class OMPS(object):
+class OMPS:
     """OMPS service.
 
     Collects methods to work with the OMPS service.
@@ -87,7 +93,7 @@ class OMPS(object):
         return requests.post(url, headers=self._headers)
 
 
-class QuayAppRegistry(object):
+class QuayAppRegistry:
     """Quay App Registry.
 
     Collects methods to work with the Quay App Registry.
@@ -186,6 +192,43 @@ class QuayAppRegistry(object):
             if rel['release'] == release:
                 return rel
         return {}
+
+    def get_bundle(self, namespace, package, release):
+        """Get all releases for a package.
+
+        Args:
+            namespace: Namespace.
+            package: Package.
+            releases: Release:
+
+        Returns:
+            An operator bundle dictionary, loaded from  the 'bundle.yaml'
+            retrieved from Quay.
+
+        Raises:
+            HTTPError: when failed to retrieve the bundle.
+        """
+        url = '{api}/packages/{namespace}/{package}/{release}/{media_type}/pull'
+        url = url.format(api=self._api_url, namespace=namespace,
+                         package=package, release=release, media_type='helm')
+        headers = {'Authorization': self._token}
+        r = requests.get(url, headers=headers)
+        r.raise_for_status()
+
+        bundle = ''
+        with TemporaryDirectory() as tempdir:
+            archive = '{tempdir}/operator.tar.gz'.format(tempdir=tempdir)
+            with open(archive, 'wb') as f:
+                f.write(r.content)
+
+            with tarfile.open(archive, 'r:gz') as tar:
+                tar.extractall(path=tempdir)
+
+            bundle_file = '{tempdir}/bundle.yaml'.format(tempdir=tempdir)
+            with open(bundle_file, 'r') as f:
+                bundle = yaml.safe_load(f)
+
+        return bundle
 
     def get_packages(self, namespace):
         """Get all packages from a namespace.
@@ -288,3 +331,52 @@ class QuayAppRegistry(object):
         releases = [release['release'] for release in
                     self.get_releases(namespace, package)]
         self.delete_releases('/'.join([namespace, package]), releases)
+
+
+class Koji:
+    """Koji.
+
+    Collects methods to work with Koji.
+
+    Attributes:
+        _kojihub: URL to Koji Hub for API access, excluding trailing /.
+            Example: https://koji.fedoraproject.org/kojihub
+        _kojiroot: URL to Koji root, where build artifacts are stored,
+            excluding trailing /.
+            Example: https://kojipkgs.fedoraproject.org/
+        _session: Koji client session talking to the hub.
+    """
+    def __init__(self, kojihub, kojiroot):
+        self._kojihub = kojihub
+        self._kojiroot = kojiroot
+        self._session = koji.ClientSession(self._kojihub)
+
+    def download_manifest(self, nvr, tmpdir):
+        """Download and unpack the operator manifest archive.
+
+        Args:
+            nvr: NVR of the build from where the manifest archive should be
+                downloaded.
+            tmpdir (PosixPath): Temporary directory where the archive is
+                unpacked.
+
+        Returns: None
+
+        Raises: HTTPError, in case the downloading the archive failed.
+        """
+        for log in self._session.getBuildLogs(nvr):
+            if log['name'] == 'operator_manifests.zip':
+                path = log['path']
+
+        file_url = '{root}/{path}'.format(root=self._kojiroot, path=path)
+        r = requests.get(file_url)
+        r.raise_for_status()
+
+        archive = tmpdir / 'operator_manifests.zip'
+        with open(archive, 'wb') as f:
+            f.write(r.content)
+
+        with zipfile.ZipFile(archive) as z:
+            z.extractall(tmpdir)
+
+        os.remove(archive)

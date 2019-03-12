@@ -5,6 +5,7 @@
 
 import shutil
 import requests
+from operatorcourier import api as courier
 from tests.integration.constants import (
     TEST_NAMESPACE,
     TEST_PACKAGE,
@@ -13,7 +14,7 @@ from tests.integration.constants import (
     TEST_NOT_AN_OPERATOR)
 
 
-def test_invalid_zip(omps, quay, tmp_path):
+def test_invalid_zip(omps):
     """
     When fetching an NVR from Koji,
     and the archive attached to the build has an invalid bundle,
@@ -28,7 +29,7 @@ def test_invalid_zip(omps, quay, tmp_path):
     assert 'bundle is invalid' in response.json()['message']
 
 
-def test_not_an_operator(omps, quay, tmp_path):
+def test_not_an_operator(omps):
     """
     When fetching an NVR from Koji,
     and the container image referenced by the NVR is not an operator,
@@ -43,7 +44,7 @@ def test_not_an_operator(omps, quay, tmp_path):
     assert 'Not an operator image' in response.json()['message']
 
 
-def test_nvr_not_found(omps, quay, tmp_path):
+def test_nvr_not_found(omps):
     """
     When fetching an NVR from Koji,
     and no build exists for that NVR in Koji,
@@ -58,12 +59,14 @@ def test_nvr_not_found(omps, quay, tmp_path):
     assert 'NVR not found' in response.json()['message']
 
 
-def test_valid_zip_default_version(omps, quay, tmp_path):
+def test_valid_zip_default_version(omps, quay, koji, tmp_path):
     """
     When fetching an NVR from Koji,
     and it's going to be the first release in the package,
     and there is no version specified,
-    then the release gets the default version number.
+    then the release gets the default version number,
+    and the bundle uploaded to Quay is the same as the one generated
+        from the Koji archive.
     """
     nvr = TEST_VALID_NVR
     quay.clean_up_package(TEST_NAMESPACE, TEST_PACKAGE)
@@ -85,8 +88,16 @@ def test_valid_zip_default_version(omps, quay, tmp_path):
     }
     assert quay.get_release(TEST_NAMESPACE, TEST_PACKAGE, '1.0.0')
 
+    quay_bundle = quay.get_bundle(TEST_NAMESPACE, TEST_PACKAGE, '1.0.0')
+    koji.download_manifest(nvr, tmp_path)
+    koji_bundle = courier.build_and_verify(source_dir=tmp_path.as_posix())
 
-def test_valid_zip_defined_version(omps, quay, tmp_path):
+    # Note: this only confirms that OMPS used the right data from Koji,
+    #       but tells nothing about the correctness of that data.
+    assert quay_bundle == koji_bundle
+
+
+def test_valid_zip_defined_version(omps, quay):
     """
     When fetching an NVR from Koji,
     and there is a version specified,

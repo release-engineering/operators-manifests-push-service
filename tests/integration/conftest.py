@@ -5,7 +5,7 @@
 
 import os
 import pytest
-from .utils import OMPS, QuayAppRegistry
+from .utils import OMPS, QuayAppRegistry, Koji
 from .constants import TEST_PACKAGE
 
 
@@ -41,3 +41,15 @@ def omps(quay):
     api_url = os.getenv('OMPS_INT_TEST_OMPS_URL')
 
     return OMPS(api_url, quay.token)
+
+
+@pytest.fixture(scope='session')
+def koji():
+    """Koji instance configured in OMPS.
+
+    Returns: An instance of Koji.
+    Raises: None.
+    """
+    kojihub = os.getenv('OMPS_INT_TEST_KOJIHUB')
+    kojiroot = os.getenv('OMPS_INT_TEST_KOJIROOT')
+    return Koji(kojihub, kojiroot)
