@@ -12,7 +12,7 @@ from .utils import OMPS, QuayAppRegistry, Koji
 def test_env():
     """Test environment configuration.
     """
-    with open('test.env') as f:
+    with open('test.env.yaml') as f:
         env = yaml.safe_load(f)
     return env
 
