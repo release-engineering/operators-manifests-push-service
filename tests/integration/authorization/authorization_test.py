@@ -3,7 +3,7 @@
 # see the LICENSE file for license
 #
 
-import os
+
 import shutil
 import pytest
 import requests
@@ -11,10 +11,8 @@ from tests.integration.utils import OMPS
 
 
 @pytest.fixture(scope='module')
-def no_auth_omps():
-    api_url = os.getenv('OMPS_INT_TEST_OMPS_URL')
-
-    return OMPS(api_url)
+def no_auth_omps(test_env):
+    return OMPS(test_env['omps_url'])
 
 
 def test_upload_without_authorization(test_env, no_auth_omps, tmp_path):
