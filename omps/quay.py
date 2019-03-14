@@ -218,7 +218,7 @@ class QuayOrganization:
             raise QuayCourierError("Failed to push manifest: {}".format(e))
         else:
             if not self.public:
-                logger.debug(
+                logger.info(
                     "Organization '%s' is private, skipping publishing",
                     self._organization)
                 return
@@ -377,7 +377,7 @@ class QuayOrganization:
         headers = {
             "Authorization": "Bearer {}".format(self._oauth_token)
         }
-        logger.debug("Publishing repository %s", repo)
+        logger.info("Publishing repository %s", repo)
         r = requests.post(url, headers=headers, json=data)
         if r.status_code != requests.codes.ok:
             msg = get_error_msg(r)
