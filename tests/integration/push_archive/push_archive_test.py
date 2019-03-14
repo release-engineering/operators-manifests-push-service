@@ -30,7 +30,9 @@ def test_initial_upload(test_env, omps, quay, tmp_path):
     assert response['repo'] == test_env['test_package']
     assert response['version'] == '1.0.0'
 
-    releases = quay.get_releases(test_env['test_namespace'], test_env['test_package'])
+    releases = quay.get_releases(test_env['test_namespace'],
+                                 test_env['test_package'],
+                                 authorization=None)
     assert releases
     assert len(releases) == 1
     assert releases[0]['release'] == '1.0.0'
@@ -58,7 +60,10 @@ def test_upload_with_version(test_env, omps, quay, tmp_path):
     assert response['repo'] == test_env['test_package']
     assert response['version'] == version
 
-    assert quay.get_release(test_env['test_namespace'], test_env['test_package'], version)
+    assert quay.get_release(test_env['test_namespace'],
+                            test_env['test_package'],
+                            version,
+                            authorization=None)
 
 
 def test_increment_version(test_env, omps, quay, tmp_path):
@@ -93,7 +98,9 @@ def test_increment_version(test_env, omps, quay, tmp_path):
     assert response['version'] == next_release
 
     assert quay.get_release(test_env['test_namespace'],
-                            test_env['test_package'], next_release)
+                            test_env['test_package'],
+                            next_release,
+                            authorization=None)
 
 
 def test_version_exists(test_env, omps, quay, tmp_path):

@@ -34,7 +34,9 @@ def test_delete_version(test_env, omps, quay, tmp_path):
         'repo': test_env['test_package'],
     }
     assert not quay.get_release(test_env['test_namespace'],
-                                test_env['test_package'], version)
+                                test_env['test_package'],
+                                version,
+                                authorization=None)
 
 
 def test_version_does_not_exist(test_env, omps, quay, tmp_path):
@@ -94,6 +96,10 @@ def test_delete_all_versions(test_env, omps, quay, tmp_path):
         'organization': test_env['test_namespace'],
         'repo': test_env['test_package'],
     }
+
+    assert not quay.get_releases(test_env['test_namespace'],
+                                 test_env['test_package'],
+                                 authorization=None)
 
 
 def test_organization_unaccessible_in_quay(test_env, omps):
@@ -167,4 +173,6 @@ def test_increment_version_after_delete(test_env, omps, quay, tmp_path,
     assert response.status_code == requests.codes.ok
     assert response.json()['version'] == next_version
     assert quay.get_release(test_env['test_namespace'],
-                            test_env['test_package'], next_version)
+                            test_env['test_package'],
+                            next_version,
+                            authorization=None)
