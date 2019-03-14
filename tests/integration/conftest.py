@@ -52,3 +52,27 @@ def koji():
     Raises: None.
     """
     return Koji(test_env['kojihub'], test_env['kojiroot'])
+
+
+@pytest.fixture
+def private_quay():
+    quay = None
+
+    if test_env.get('private_org'):
+        quay = QuayAppRegistry(test_env['quay_app_registry_api'],
+                               test_env['quay_api'],
+                               test_env['quay_oauth_token'])
+        quay.login_to_cnr(test_env['private_org']['user'],
+                          test_env['private_org']['password'])
+
+    yield quay
+
+    if quay:
+        quay.delete(test_env['private_org']['namespace'],
+                    test_env['private_org']['package'])
+
+
+@pytest.fixture
+def private_omps(private_quay):
+    if private_quay:
+        return OMPS(test_env['omps_url'], private_quay.token)
