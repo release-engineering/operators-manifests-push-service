@@ -111,9 +111,10 @@ class QuayAppRegistry:
     def __init__(self, api_url):
         self._api_url = api_url
         self._token = None
+        self._cnr_header = None
 
-    def login(self, username, password):
-        """Login to Quay and store token.
+    def login_to_cnr(self, username, password):
+        """Login to Quay CNR endpoint and store the authorization header.
 
         Args:
             username, password: Credentials used to log in.
@@ -136,17 +137,21 @@ class QuayAppRegistry:
         r.raise_for_status()
 
         self._token = r.json()['token']
+        self._cnr_header = {'Authorization': self._token}
 
     @property
     def token(self):
         return self._token
 
-    def get_releases(self, namespace, package):
+    def get_releases(self, namespace, package, authorization=True):
         """Get all releases for a package.
 
         Args:
             namespace: Namespace.
             package: Package.
+            authorization: If True, the Quay endpoint is accessed
+                using the authorization token. If evaluates to False,
+                the endpoint is accessed unauthorized. Defaults to True.
 
         Returns:
             List of dictionaries, representing releases. Empty list if the
@@ -177,7 +182,7 @@ class QuayAppRegistry:
             api=self._api_url,
             namespace=namespace,
             package=package)
-        headers = {'Authorization': self._token}
+        headers = (authorization and self._cnr_header) or None
 
         r = requests.get(url, headers=headers)
         if r.status_code == requests.codes.not_found:
@@ -187,19 +192,22 @@ class QuayAppRegistry:
 
         return r.json()
 
-    def get_release(self, namespace, package, release):
-        for rel in self.get_releases(namespace, package):
+    def get_release(self, namespace, package, release, authorization=True):
+        for rel in self.get_releases(namespace, package, authorization):
             if rel['release'] == release:
                 return rel
         return {}
 
-    def get_bundle(self, namespace, package, release):
+    def get_bundle(self, namespace, package, release, authorization=True):
         """Get all releases for a package.
 
         Args:
             namespace: Namespace.
             package: Package.
-            releases: Release:
+            releases: Release.
+            authorization: If True, the Quay endpoint is accessed
+                using the authorization token. If evaluates to False,
+                the endpoint is accessed unauthorized. Defaults to True.
 
         Returns:
             An operator bundle dictionary, loaded from  the 'bundle.yaml'
@@ -211,7 +219,7 @@ class QuayAppRegistry:
         url = '{api}/packages/{namespace}/{package}/{release}/{media_type}/pull'
         url = url.format(api=self._api_url, namespace=namespace,
                          package=package, release=release, media_type='helm')
-        headers = {'Authorization': self._token}
+        headers = (authorization and self._cnr_header) or None
         r = requests.get(url, headers=headers)
         r.raise_for_status()
 
@@ -230,11 +238,14 @@ class QuayAppRegistry:
 
         return bundle
 
-    def get_packages(self, namespace):
+    def get_packages(self, namespace, authorization=True):
         """Get all packages from a namespace.
 
         Args:
             namespace: Namespace.
+            authorization: If True, the Quay endpoint is accessed
+                using the authorization token. If evaluates to False,
+                the endpoint is accessed unauthorized. Defaults to True.
 
         Returns:
             List of dictionaries, representing packages.
@@ -261,7 +272,7 @@ class QuayAppRegistry:
             HTTPError: Getting packages failed.
         """
         url = '{api}/packages'.format(api=self._api_url)
-        headers = {'Authorization': self._token}
+        headers = (authorization and self._cnr_header) or None
         payload = {'namespace': namespace}
 
         r = requests.get(url, headers=headers, params=payload)
@@ -269,12 +280,15 @@ class QuayAppRegistry:
 
         return r.json()
 
-    def delete_releases(self, name, releases):
+    def delete_releases(self, name, releases, authorization=True):
         """Delete a list of releases from a package.
 
         Args:
             name: 'namespace/package' to delete releases from.
             releases: List of releases to delete.
+            authorization: If True, the Quay endpoint is accessed
+                using the authorization token. If evaluates to False,
+                the endpoint is accessed unauthorized. Defaults to True.
 
         Returns:
             None
@@ -285,7 +299,7 @@ class QuayAppRegistry:
         package_url = '{api}/packages/{name}'.format(
             api=self._api_url,
             name=name)
-        headers = {'Authorization': self._token}
+        headers = (authorization and self._cnr_header) or None
 
         for release in releases:
             url = '{package_url}/{release}/helm'.format(
