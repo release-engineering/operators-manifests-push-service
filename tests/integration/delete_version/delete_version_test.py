@@ -6,9 +6,10 @@
 import shutil
 import requests
 import pytest
+from tests.integration.utils import test_env
 
 
-def test_delete_version(test_env, omps, quay, tmp_path):
+def test_delete_version(omps, quay, tmp_path):
     """
     When a version is requested to be deleted,
     and a release matching that version exists for the package,
@@ -39,7 +40,7 @@ def test_delete_version(test_env, omps, quay, tmp_path):
                                 authorization=None)
 
 
-def test_version_does_not_exist(test_env, omps, quay, tmp_path):
+def test_version_does_not_exist(omps, quay, tmp_path):
     """
     If the version requested to be deleted, is not present in the package,
     a 'QuayPackageNotFound' error is returned.
@@ -70,7 +71,7 @@ def test_version_does_not_exist(test_env, omps, quay, tmp_path):
     assert "doesn't exist" in response.json()['message']
 
 
-def test_delete_all_versions(test_env, omps, quay, tmp_path):
+def test_delete_all_versions(omps, quay, tmp_path):
     """
     When there is no version specified for the delete operation,
     all the releases of the package are deleted.
@@ -102,7 +103,7 @@ def test_delete_all_versions(test_env, omps, quay, tmp_path):
                                  authorization=None)
 
 
-def test_organization_unaccessible_in_quay(test_env, omps):
+def test_organization_unaccessible_in_quay(omps):
     """
     Delete fails, if the organization is not configured with OMPS.
     """
@@ -113,7 +114,7 @@ def test_organization_unaccessible_in_quay(test_env, omps):
     assert 'Unauthorized access' in response.json()['message']
 
 
-def test_package_does_not_exist(test_env, omps, quay):
+def test_package_does_not_exist(omps, quay):
     """
     Delete fails, if the package does not exist in Quay.
     """
@@ -137,7 +138,7 @@ def test_package_does_not_exist(test_env, omps, quay):
     pytest.param('6.0.2', '5.0.0', id='highest version'),
     pytest.param('4.0.1', '7.0.0', id='previous version'),
 ])
-def test_increment_version_after_delete(test_env, omps, quay, tmp_path,
+def test_increment_version_after_delete(omps, quay, tmp_path,
                                         delete_version, next_version):
     """
     Auto-incrementing the version works as expected,

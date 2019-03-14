@@ -4,21 +4,11 @@
 #
 
 import pytest
-import yaml
-from .utils import OMPS, QuayAppRegistry, Koji
+from .utils import OMPS, QuayAppRegistry, Koji, test_env
 
 
 @pytest.fixture(scope='session')
-def test_env():
-    """Test environment configuration.
-    """
-    with open('test.env.yaml') as f:
-        env = yaml.safe_load(f)
-    return env
-
-
-@pytest.fixture(scope='session')
-def quay(test_env):
+def quay():
     """Quay App Registry used for testing.
 
     Args:
@@ -38,7 +28,7 @@ def quay(test_env):
 
 
 @pytest.fixture(scope='session')
-def omps(test_env, quay):
+def omps(quay):
     """OMPS used for testing.
 
     Args:
@@ -52,7 +42,7 @@ def omps(test_env, quay):
 
 
 @pytest.fixture(scope='session')
-def koji(test_env):
+def koji():
     """Koji instance configured in OMPS.
 
     Args:
