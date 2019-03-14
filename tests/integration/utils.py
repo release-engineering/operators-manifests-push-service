@@ -108,8 +108,12 @@ class QuayAppRegistry:
         _token: Authorization token retrieved after logging in with
             username .and password. None at construction time.
     """
-    def __init__(self, api_url):
-        self._api_url = api_url
+    def __init__(self, quay_app_registry_api, quay_api=None, oauth_token=None):
+        self._api_url = quay_app_registry_api
+        self._quay_api = quay_api
+        self._oauth_header = {
+            'Authorization': 'Bearer {token}'.format(token=oauth_token)
+        } if oauth_token else None
         self._token = None
         self._cnr_header = None
 
@@ -308,31 +312,8 @@ class QuayAppRegistry:
             r = requests.delete(url, headers=headers)
             r.raise_for_status()
 
-    def clean_up(self, namespace, package_prefix):
-        """Clean up some packages.
-
-        Used to remove content from packages used for integration testing.
-
-        Args:
-            namespace: Namespace.
-            package_prefix: Packages in the namespace starting with this string
-                will be cleaned up.
-
-        Returns:
-            None
-
-        Raises:
-            None.
-        """
-        for package in self.get_packages(namespace):
-            name_prefix = '{namespace}/{package_prefix}'.format(
-                namespace=namespace,
-                package_prefix=package_prefix)
-            if package['name'].startswith(name_prefix):
-                self.delete_releases(package['name'], package['releases'])
-
-    def clean_up_package(self, namespace, package):
-        """Delete all versions of a package
+    def delete(self, namespace, package):
+        """Delete a package from a namespace.
 
         Args:
             namespace: Namespace.
@@ -340,11 +321,12 @@ class QuayAppRegistry:
 
         Returns: None
 
-        Raises: None.
+        Raises: HTTPError if deleting the package failed.
         """
-        releases = [release['release'] for release in
-                    self.get_releases(namespace, package)]
-        self.delete_releases('/'.join([namespace, package]), releases)
+        url = '{quay_api}/repository/{namespace}/{package}'.format(
+            quay_api=self._quay_api, namespace=namespace, package=package)
+        r = requests.delete(url, headers=self._oauth_header)
+        r.raise_for_status()
 
 
 class Koji:

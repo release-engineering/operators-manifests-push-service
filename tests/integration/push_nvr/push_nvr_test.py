@@ -63,7 +63,7 @@ def test_valid_zip_default_version(test_env, omps, quay, koji, tmp_path):
         from the Koji archive.
     """
     nvr = test_env['koji_builds']['valid_zip']
-    quay.clean_up_package(test_env['test_namespace'], test_env['test_package'])
+    quay.delete(test_env['test_namespace'], test_env['test_package'])
 
     response = omps.fetch_nvr(organization=test_env['test_namespace'],
                               repo=test_env['test_package'], nvr=nvr)
@@ -162,7 +162,7 @@ def test_increment_version(test_env, omps, quay, tmp_path):
     version = '7.6.1'
     next_version = '8.0.0'
 
-    quay.clean_up_package(test_env['test_namespace'], test_env['test_package'])
+    quay.delete(test_env['test_namespace'], test_env['test_package'])
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/push_archive/artifacts/')
     omps.upload(organization=test_env['test_namespace'],

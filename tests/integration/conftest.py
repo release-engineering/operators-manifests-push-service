@@ -27,12 +27,14 @@ def quay(test_env):
     Yields: An instance of QuayAppRegistry.
     Raises: None.
     """
-    app_registry = QuayAppRegistry(test_env['quay_url'])
+    app_registry = QuayAppRegistry(test_env['quay_app_registry_api'],
+                                   test_env['quay_api'],
+                                   test_env['quay_oauth_token'])
     app_registry.login_to_cnr(test_env['quay_user'], test_env['quay_password'])
 
     yield app_registry
 
-    app_registry.clean_up(test_env['test_namespace'], test_env['test_package'])
+    app_registry.delete(test_env['test_namespace'], test_env['test_package'])
 
 
 @pytest.fixture(scope='session')
