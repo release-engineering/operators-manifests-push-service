@@ -28,7 +28,7 @@ def quay(test_env):
     Raises: None.
     """
     app_registry = QuayAppRegistry(test_env['quay_url'])
-    app_registry.login(test_env['quay_user'], test_env['quay_password'])
+    app_registry.login_to_cnr(test_env['quay_user'], test_env['quay_password'])
 
     yield app_registry
 
