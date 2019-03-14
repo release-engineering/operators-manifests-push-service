@@ -6,9 +6,10 @@
 import shutil
 import pytest
 import requests
+from tests.integration.utils import test_env
 
 
-def test_initial_upload(test_env, omps, quay, tmp_path):
+def test_initial_upload(omps, quay, tmp_path):
     """
     When uploading an archive to a repository which is empty,
     and no version is specified during the upload
@@ -38,7 +39,7 @@ def test_initial_upload(test_env, omps, quay, tmp_path):
     assert releases[0]['release'] == '1.0.0'
 
 
-def test_upload_with_version(test_env, omps, quay, tmp_path):
+def test_upload_with_version(omps, quay, tmp_path):
     """
     When specifying the version for an upload,
     then the release is created with the version specified.
@@ -66,7 +67,7 @@ def test_upload_with_version(test_env, omps, quay, tmp_path):
                             authorization=None)
 
 
-def test_increment_version(test_env, omps, quay, tmp_path):
+def test_increment_version(omps, quay, tmp_path):
     """
     When no version is specified, and there already are some releases in
         the package,
@@ -103,7 +104,7 @@ def test_increment_version(test_env, omps, quay, tmp_path):
                             authorization=None)
 
 
-def test_version_exists(test_env, omps, quay, tmp_path):
+def test_version_exists(omps, quay, tmp_path):
     """
     When the version already exists in the package,
     then creating the new release fails.
@@ -134,7 +135,7 @@ def test_version_exists(test_env, omps, quay, tmp_path):
     ('1.a.2'),
     ('1.1'),
 ])
-def test_incorrect_version(test_env, omps, tmp_path, version):
+def test_incorrect_version(omps, tmp_path, version):
     """
     When the version specified does not meet OMPS requirements,
     then the push fails.
@@ -150,7 +151,7 @@ def test_incorrect_version(test_env, omps, tmp_path, version):
     assert version in response.json()['message']
 
 
-def test_filetype_not_supported(test_env, omps, tmpdir):
+def test_filetype_not_supported(omps, tmpdir):
     """
     If the file uploaded is not a ZIP file,
     then the push fails.
@@ -164,7 +165,7 @@ def test_filetype_not_supported(test_env, omps, tmpdir):
     assert 'not a zip file' in response.json()['message']
 
 
-def test_file_extension_not_zip(test_env, omps, tmpdir):
+def test_file_extension_not_zip(omps, tmpdir):
     """
     If the extension of the file is not '.zip',
     then the push fails.
@@ -178,7 +179,7 @@ def test_file_extension_not_zip(test_env, omps, tmpdir):
     assert 'file extension' in response.json()['message']
 
 
-def test_no_file_field(test_env, omps, tmp_path):
+def test_no_file_field(omps, tmp_path):
     """
     The ZIP file uploaded must be assigned to the 'file' field.
     """
@@ -193,7 +194,7 @@ def test_no_file_field(test_env, omps, tmp_path):
     assert 'No field "file"' in response.json()['message']
 
 
-def test_organization_unaccessible_in_quay(test_env, omps, tmp_path):
+def test_organization_unaccessible_in_quay(omps, tmp_path):
     """
     Push fails, if the organization is not configured in OMPS.
     """
@@ -208,7 +209,7 @@ def test_organization_unaccessible_in_quay(test_env, omps, tmp_path):
     assert 'Cannot retrieve information about package' in response.json()['message']
 
 
-def test_upload_password_protected_zip(test_env, omps):
+def test_upload_password_protected_zip(omps):
     """
     Push fails, if the ZIP-file is password-protected.
     """
@@ -221,7 +222,7 @@ def test_upload_password_protected_zip(test_env, omps):
     assert 'is encrypted' in response.json()['message']
 
 
-def test_upload_invalid_artifact(test_env, omps, tmp_path):
+def test_upload_invalid_artifact(omps, tmp_path):
     """
     Push fails, if the artifact does not pass quay-courier validation.
     """

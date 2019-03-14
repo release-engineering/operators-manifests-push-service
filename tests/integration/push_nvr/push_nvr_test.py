@@ -6,9 +6,10 @@
 import shutil
 import requests
 from operatorcourier import api as courier
+from tests.integration.utils import test_env
 
 
-def test_invalid_zip(test_env, omps):
+def test_invalid_zip(omps):
     """
     When fetching an NVR from Koji,
     and the archive attached to the build has an invalid bundle,
@@ -23,7 +24,7 @@ def test_invalid_zip(test_env, omps):
     assert 'bundle is invalid' in response.json()['message']
 
 
-def test_not_an_operator(test_env, omps):
+def test_not_an_operator(omps):
     """
     When fetching an NVR from Koji,
     and the container image referenced by the NVR is not an operator,
@@ -38,7 +39,7 @@ def test_not_an_operator(test_env, omps):
     assert 'Not an operator image' in response.json()['message']
 
 
-def test_nvr_not_found(test_env, omps):
+def test_nvr_not_found(omps):
     """
     When fetching an NVR from Koji,
     and no build exists for that NVR in Koji,
@@ -53,7 +54,7 @@ def test_nvr_not_found(test_env, omps):
     assert 'NVR not found' in response.json()['message']
 
 
-def test_valid_zip_default_version(test_env, omps, quay, koji, tmp_path):
+def test_valid_zip_default_version(omps, quay, koji, tmp_path):
     """
     When fetching an NVR from Koji,
     and it's going to be the first release in the package,
@@ -95,7 +96,7 @@ def test_valid_zip_default_version(test_env, omps, quay, koji, tmp_path):
     assert quay_bundle == koji_bundle
 
 
-def test_valid_zip_defined_version(test_env, omps, quay):
+def test_valid_zip_defined_version(omps, quay):
     """
     When fetching an NVR from Koji,
     and there is a version specified,
@@ -124,7 +125,7 @@ def test_valid_zip_defined_version(test_env, omps, quay):
                             authorization=None)
 
 
-def test_version_exists(test_env, omps, quay, tmp_path):
+def test_version_exists(omps, quay, tmp_path):
     """
     When fetching an NVR from Koji,
     and the request specifies a version,
@@ -150,7 +151,7 @@ def test_version_exists(test_env, omps, quay, tmp_path):
     assert 'Failed to push' in response.json()['message']
 
 
-def test_increment_version(test_env, omps, quay, tmp_path):
+def test_increment_version(omps, quay, tmp_path):
     """
     When fetching an NVR from Koji,
     and the request specifies no version for the release to be created,

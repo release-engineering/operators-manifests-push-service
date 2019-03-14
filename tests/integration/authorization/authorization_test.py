@@ -7,15 +7,15 @@
 import shutil
 import pytest
 import requests
-from tests.integration.utils import OMPS
+from tests.integration.utils import OMPS, test_env
 
 
 @pytest.fixture(scope='module')
-def no_auth_omps(test_env):
+def no_auth_omps():
     return OMPS(test_env['omps_url'])
 
 
-def test_upload_without_authorization(test_env, no_auth_omps, tmp_path):
+def test_upload_without_authorization(no_auth_omps, tmp_path):
     """
     Upload fails, when no 'Authorization' header is provided.
     """
@@ -28,7 +28,7 @@ def test_upload_without_authorization(test_env, no_auth_omps, tmp_path):
     assert response.json()['error'] == 'OMPSAuthorizationHeaderRequired'
 
 
-def test_delete_without_authorization(test_env, no_auth_omps, omps, quay, tmp_path):
+def test_delete_without_authorization(no_auth_omps, omps, quay, tmp_path):
     """
     Deleting a version fails, when no 'Authorization' header is provided.
     """
