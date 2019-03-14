@@ -81,10 +81,12 @@ def test_valid_zip_default_version(test_env, omps, quay, koji, tmp_path):
         'version': '1.0.0',
     }
     assert quay.get_release(test_env['test_namespace'],
-                            test_env['test_package'], '1.0.0')
+                            test_env['test_package'], '1.0.0',
+                            authorization=None)
 
     quay_bundle = quay.get_bundle(test_env['test_namespace'],
-                                  test_env['test_package'], '1.0.0')
+                                  test_env['test_package'], '1.0.0',
+                                  authorization=None)
     koji.download_manifest(nvr, tmp_path)
     koji_bundle = courier.build_and_verify(source_dir=tmp_path.as_posix())
 
@@ -118,7 +120,8 @@ def test_valid_zip_defined_version(test_env, omps, quay):
         'version': version,
     }
     assert quay.get_release(test_env['test_namespace'],
-                            test_env['test_package'], version)
+                            test_env['test_package'], version,
+                            authorization=None)
 
 
 def test_version_exists(test_env, omps, quay, tmp_path):
@@ -181,4 +184,5 @@ def test_increment_version(test_env, omps, quay, tmp_path):
         'version': next_version,
     }
     assert quay.get_release(test_env['test_namespace'],
-                            test_env['test_package'], next_version)
+                            test_env['test_package'], next_version,
+                            authorization=None)
