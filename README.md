@@ -307,6 +307,31 @@ curl \
 ```
 
 
+### Telling the current version of OMPS
+
+#### Endpoint
+
+* [GET] `/v1/about`
+
+#### Replies
+
+**OK**
+
+HTTP code: 200
+
+```json
+{
+  "version": "2.0"
+}
+```
+
+#### Examples
+
+```bash
+curl https://example.com/v1/about
+```
+
+
 ## Development
 
 ### Running Flask dev. server
