@@ -29,6 +29,7 @@ class ProdConfig(DefaultConfig):
 
 class DevConfig(DefaultConfig):
     DEBUG = True
+    LOG_LEVEL = 'DEBUG'
 
 
 class TestConfig(DefaultConfig):
