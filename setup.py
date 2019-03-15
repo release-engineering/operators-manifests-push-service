@@ -5,9 +5,31 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
+import re
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 from os import path
+
+
+def get_project_version(version_file='omps/__init__.py'):
+    """
+    Read the declared version of the project from the source code.
+
+    Args:
+        version_file: The file with the version string in it. The version must
+            be in the format ``__version__ = '<version>'`` and the file must be
+            UTF-8 encoded.
+
+    As seen in https://pagure.io/waiverdb/raw/master/f/setup.py
+    """
+    with open(version_file, 'r') as f:
+        version_pattern = "^__version__ = '(.+)'$"
+        match = re.search(version_pattern, f.read(), re.MULTILINE)
+    if match is None:
+        err_msg = 'No line matching %r found in %r'
+        raise ValueError(err_msg % (version_pattern, version_file))
+    return match.group(1)
+
 
 here = path.abspath(path.dirname(__file__))
 
@@ -17,7 +39,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='omps',
-    version='2.0',
+    version=get_project_version(),
     description='Operators Manifests Push Service',
     long_description=long_description,
     long_description_content_type='text/markdown',
