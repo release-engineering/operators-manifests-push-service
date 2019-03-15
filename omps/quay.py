@@ -159,6 +159,13 @@ class OrgManager:
     def initialize(self, config):
         self.validate_conf(config.organizations)
         self._organizations = config.organizations
+        for org_name, org_conf in self._organizations.items():
+            logger.info(
+                'Organization "%s" configured: public=%s, oauth_access=%s',
+                org_name,
+                org_conf.get('public', False),
+                bool(org_conf.get('oauth_token')),
+            )
 
     def get_org(self, organization, cnr_token):
         org_config = self._organizations.get(organization, {})
