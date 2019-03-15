@@ -182,6 +182,8 @@ class QuayOrganization:
         :param oauth_token: oauth_access_token
         :param public: organization is public
         """
+        self.logger = logging.getLogger(
+            '{0}[{1}]'.format(self.__class__.__name__, organization))
         self._quay_url = "https://quay.io"
         self._organization = organization
         self._token = cnr_token
@@ -212,18 +214,18 @@ class QuayOrganization:
                 source_dir=source_dir
             )
         except Exception as e:
-            logger.error(
+            self.logger.error(
                 "push_operator_manifest: Operator courier call failed: %s", e
             )
             raise QuayCourierError("Failed to push manifest: {}".format(e))
         else:
             if not self.public:
-                logger.info(
+                self.logger.info(
                     "Organization '%s' is private, skipping publishing",
                     self._organization)
                 return
             if not self.oauth_access:
-                logger.error(
+                self.logger.error(
                     "Cannot publish repository %s, Oauth access is not "
                     "configured for organization %s",
                     repo, self._organization)
@@ -294,7 +296,7 @@ class QuayOrganization:
                 version = ReleaseVersion.from_str(release)
             except ValueError as e:
                 # ignore incorrect versions
-                logger.debug("Ignoring version: %s: %s", release, e)
+                self.logger.debug("Ignoring version: %s: %s", release, e)
                 continue
             else:
                 releases.append(version)
@@ -342,8 +344,9 @@ class QuayOrganization:
         )
         headers = {'Authorization': self._token}
 
-        logger.info('Deleting release %s/%s, v:%s',
-                    self._organization, repo, version)
+        self.logger.info(
+            'Deleting release %s/%s, v:%s',
+            self._organization, repo, version)
 
         r = requests.delete(url, headers=headers)
 
@@ -352,10 +355,10 @@ class QuayOrganization:
             msg = get_error_msg(r)
 
             if r.status_code == requests.codes.not_found:
-                logger.info("Delete release (404): %s", msg)
+                self.logger.info("Delete release (404): %s", msg)
                 raise QuayPackageNotFound(msg)
 
-            logger.error("Delete release (%s): %s", r.status_code, msg)
+            self.logger.error("Delete release (%s): %s", r.status_code, msg)
             raise QuayPackageError(msg)
 
     def publish_repo(self, repo):
@@ -377,11 +380,11 @@ class QuayOrganization:
         headers = {
             "Authorization": "Bearer {}".format(self._oauth_token)
         }
-        logger.info("Publishing repository %s", repo)
+        self.logger.info("Publishing repository %s", repo)
         r = requests.post(url, headers=headers, json=data)
         if r.status_code != requests.codes.ok:
             msg = get_error_msg(r)
-            logger.error("Publishing repository: %s", msg)
+            self.logger.error("Publishing repository: %s", msg)
             raise QuayPackageError(msg)
 
 
