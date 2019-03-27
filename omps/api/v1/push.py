@@ -110,7 +110,7 @@ def extract_zip_file_from_request(
 
     validate_allowed_extension(uploaded_file.filename)
 
-    with NamedTemporaryFile('w', suffix='.zip', dir=target_dir) as tmpf:
+    with NamedTemporaryFile('w', suffix='.zip') as tmpf:
         uploaded_file.save(tmpf.name)
         _extract_zip_file(tmpf.name, target_dir,
                           max_uncompressed_size=max_uncompressed_size)
@@ -127,7 +127,7 @@ def extract_zip_file_from_koji(
     :param max_uncompressed_size: size in Bytes how big data can be accepted
         after uncompressing
     """
-    with NamedTemporaryFile('wb', suffix='.zip', dir=target_dir) as tmpf:
+    with NamedTemporaryFile('wb', suffix='.zip') as tmpf:
         KOJI.download_manifest_archive(nvr, tmpf)
         _extract_zip_file(tmpf.name, target_dir,
                           max_uncompressed_size=max_uncompressed_size)
