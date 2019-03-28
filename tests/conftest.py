@@ -128,6 +128,33 @@ def mocked_op_courier_push():
 
 
 @pytest.fixture
+def op_courier_push_raising():
+    """Use as a context manager to make courier raise a specific exception
+    from build_verify_and_push()
+
+    e.g.:
+        with op_courier_push_raising(OpCourierBadBundle(*exc_args)):
+            quay_org.push_operator_manifest(*push_args)
+    """
+    class CourierPushCM:
+        def __init__(self, exception):
+            self.e = exception
+            self.original_api = operatorcourier.api
+            self.mocked_api = flexmock(self.original_api)
+
+        def __enter__(self):
+            (self.mocked_api
+                .should_receive('build_verify_and_push')
+                .and_raise(self.e))
+            operatorcourier.api = self.mocked_api
+
+        def __exit__(self, *args):
+            operatorcourier.api = self.original_api
+
+    return CourierPushCM
+
+
+@pytest.fixture
 def mocked_koji_archive_download(valid_manifests_archive):
     """Mock KojiUtil.koji_download_manifest_archive to return valid archive"""
     def fake_download(nvr, target_fd):
