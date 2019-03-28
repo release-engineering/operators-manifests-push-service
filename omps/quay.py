@@ -14,9 +14,9 @@ import requests
 from operatorcourier import api as courier_api
 
 from .errors import (
-    QuayCourierError,
     QuayPackageNotFound,
     QuayPackageError,
+    raise_for_courier_exception
 )
 
 logger = logging.getLogger(__name__)
@@ -221,10 +221,7 @@ class QuayOrganization:
                 source_dir=source_dir
             )
         except Exception as e:
-            self.logger.error(
-                "push_operator_manifest: Operator courier call failed: %s", e
-            )
-            raise QuayCourierError("Failed to push manifest: {}".format(e))
+            self._handle_courier_exception(e)
         else:
             if not self.public:
                 self.logger.info(
@@ -238,6 +235,13 @@ class QuayOrganization:
                     repo, self._organization)
                 return
             self.publish_repo(repo)
+
+    def _handle_courier_exception(self, e):
+        self.logger.error(
+            "push_operator_manifest: Operator courier call failed: %s", e
+        )
+        msg = "Failed to push manifest: {}".format(e)
+        raise_for_courier_exception(e, new_msg=msg)
 
     def _get_repo_content(self, repo):
         """Return content of repository"""
