@@ -15,7 +15,7 @@ def test_push_zipfile(
         client, valid_manifests_archive, endpoint_push_zipfile,
         mocked_quay_io, mocked_op_courier_push, auth_header):
     """Test REST API for pushing operators form zipfile"""
-    with open(valid_manifests_archive, 'rb') as f:
+    with open(valid_manifests_archive.path, 'rb') as f:
         data = {
             'file': (f, f.name),
         }
@@ -29,9 +29,9 @@ def test_push_zipfile(
     assert rv.status_code == 200, rv.get_json()
     expected = {
         'organization': endpoint_push_zipfile.org,
-        'repo': endpoint_push_zipfile.repo,
+        'repo': valid_manifests_archive.pkg_name,
         'version': endpoint_push_zipfile.version or constants.DEFAULT_RELEASE_VERSION,
-        'extracted_files': ['empty.yml'],
+        'extracted_files': valid_manifests_archive.files,
     }
     assert rv.get_json() == expected
 
@@ -108,17 +108,18 @@ def test_push_koji_nvr(
         client, endpoint_push_koji, mocked_quay_io, mocked_op_courier_push,
         auth_header, mocked_koji_archive_download):
     """Test REST API for pushing operators form koji by NVR"""
+    archive = mocked_koji_archive_download
     rv = client.post(
         endpoint_push_koji.url_path,
         headers=auth_header
     )
-    assert rv.status_code == 200
+    assert rv.status_code == 200, rv.get_json()
     expected = {
         'organization': endpoint_push_koji.org,
-        'repo': endpoint_push_koji.repo,
+        'repo': archive.pkg_name,
         'version': endpoint_push_koji.version or constants.DEFAULT_RELEASE_VERSION,
         'nvr': endpoint_push_koji.nvr,
-        'extracted_files': ['empty.yml'],
+        'extracted_files': archive.files,
     }
     assert rv.get_json() == expected
 
@@ -132,26 +133,23 @@ def test_push_koji_unauthorized(client, endpoint_push_koji):
     assert rv_json['error'] == 'OMPSAuthorizationHeaderRequired'
 
 
-ZIP_ENDPOINT_NOVER = '/v2/organization-X/repo-Y/zipfile'
-
-
-@pytest.mark.parametrize('endpoint', [
-    ZIP_ENDPOINT_NOVER,
-    '/v2/organization-X/repo-Y/zipfile/1.0.1',
-    '/v2/organization-X/repo-Y/koji/nvr-Z',
-    '/v2/organization-X/repo-Y/koji/nvr-Z/1.0.1',
+@pytest.mark.parametrize('endpoint, exclude', [
+    ('/v2/organization-X/zipfile', {'DELETE', }),
+    ('/v2/organization-X/zipfile/1.0.1', {'DELETE', }),
+    ('/v2/organization-X/koji/nvr-Z', {'DELETE', }),
+    ('/v2/organization-X/koji/nvr-Z/1.0.1', set()),
 ])
 @pytest.mark.parametrize('method', [
     'GET', 'PATCH' 'PUT', 'HEAD', 'DELETE', 'TRACE',
 ])
-def test_method_not_allowed(client, endpoint, method):
+def test_method_not_allowed(client, endpoint, exclude, method):
     """Specified endpoints currently support only POST method, test if other
     HTTP methods returns proper error code
 
     Method OPTIONS is excluded from testing due its special meaning
     """
-    if (endpoint, method) == (ZIP_ENDPOINT_NOVER, 'DELETE'):
-        # accepted, collides with [DELETE] /org/repo/version
+    if method in exclude:
+        # exclude testing of some combinations
         return
 
     rv = client.open(endpoint, method=method)

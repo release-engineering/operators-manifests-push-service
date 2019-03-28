@@ -60,6 +60,7 @@ setup(
         'Flask==1.0.*',
         'jsonschema',
         'koji',
+        'PyYAML',
         'requests',
         'operator-courier',
     ],

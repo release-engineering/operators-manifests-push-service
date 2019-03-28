@@ -18,16 +18,15 @@ EntrypointMeta = namedtuple('EntrypointMeta', 'url_path,org,repo,version,nvr')
 def endpoint_push_zipfile(request, release_version):
     """Returns URL for zipfile endpoints"""
     organization = 'testorg'
-    repo = 'repo-Y'
     version = release_version if request.param else None
 
-    url_path = '/v2/{}/{}/zipfile'.format(organization, repo)
+    url_path = '/v2/{}/zipfile'.format(organization)
     if version:
         url_path = '{}/{}'.format(url_path, version)
 
     yield EntrypointMeta(
         url_path=url_path, org=organization,
-        repo=repo, version=version, nvr=None,
+        repo=None, version=version, nvr=None,
     )
 
 
@@ -38,17 +37,16 @@ def endpoint_push_zipfile(request, release_version):
 def endpoint_push_koji(request, release_version):
     """Returns URL for koji endpoints"""
     organization = 'testorg'
-    repo = 'repo-Y'
     nvr = 'build-1.0.1-2'
     version = release_version if request.param else None
 
-    url_path = '/v2/{}/{}/koji/{}'.format(organization, repo, nvr)
+    url_path = '/v2/{}/koji/{}'.format(organization, nvr)
     if version:
         url_path = '{}/{}'.format(url_path, version)
 
     yield EntrypointMeta(
         url_path=url_path, org=organization,
-        repo=repo, version=version, nvr=nvr,
+        repo=None, version=version, nvr=nvr,
     )
 
 
