@@ -8,6 +8,7 @@ import logging
 from flask import Flask
 
 from .api.v1 import API as API_V1
+from .api.v2 import API as API_V2
 from .errors import init_errors_handling
 from .quay import ORG_MANAGER
 from .koji_util import KOJI
@@ -45,6 +46,7 @@ def _init_errors_handling(app):
 def _register_blueprints(app):
     logger.debug('Registering blueprints')
     app.register_blueprint(API_V1, url_prefix='/v1')
+    app.register_blueprint(API_V2, url_prefix='/v2')
 
 
 app = create_app()
