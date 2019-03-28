@@ -9,10 +9,23 @@ import flexmock
 import requests
 import requests_mock
 import pytest
+from operatorcourier.errors import (
+    OpCourierQuayErrorResponse,
+    OpCourierBadBundle,
+    OpCourierError,
+    OpCourierQuayError,
+    OpCourierQuayCommunicationError,
+    OpCourierValueError,
+    OpCourierBadArtifact,
+    OpCourierBadYaml
+)
 
 from omps.errors import (
+    QuayCourierError,
     QuayPackageError,
     QuayPackageNotFound,
+    QuayAuthorizationError,
+    PackageValidationError
 )
 from omps.quay import (
     get_cnr_api_version,
@@ -107,13 +120,114 @@ class TestQuayOrganization:
     version = "0.0.1"
     source_dir = "/not/important/dir"
 
-    def test_push_operator_manifest(self, mocked_op_courier_push):
+    @pytest.mark.usefixtures('mocked_op_courier_push')
+    def test_push_operator_manifest(self):
         """Test for pushing operator manifest"""
 
         qo = QuayOrganization(self.org, self.cnr_token)
         qo.push_operator_manifest(self.repo, self.version, self.source_dir)
 
-    def test_push_operator_manifest_publish_repo(self, mocked_op_courier_push):
+    @pytest.mark.parametrize('courier_exception', [
+        OpCourierError('a'),
+        OpCourierQuayError('b'),
+        OpCourierQuayCommunicationError('c'),
+        OpCourierValueError('d')
+    ])
+    def test_generic_courier_error(self, courier_exception,
+                                   caplog, op_courier_push_raising):
+        """Test that all the courier exceptions meant to be handled
+        in a generic way are in fact handled that way"""
+        expected_dict = {
+            'status': 500,
+            'error': 'QuayCourierError',
+            'message': f'Failed to push manifest: {courier_exception}',
+            'quay_response': {}
+        }
+
+        self._test_courier_exception(courier_exception,
+                                     QuayCourierError,
+                                     expected_dict,
+                                     caplog,
+                                     op_courier_push_raising)
+
+    @pytest.mark.parametrize('courier_exception', [
+        OpCourierBadArtifact('Bad artifact.'),
+        OpCourierBadYaml('Bad yaml.')
+    ])
+    def test_courier_invalid_files_error(self, courier_exception,
+                                         caplog, op_courier_push_raising):
+        """Test that the proper exception is raised when courier reports
+        an error while building bundle (invalid yaml/artifact)"""
+        expected_dict = {
+            'status': 400,
+            'error': 'PackageValidationError',
+            'message': f'Failed to push manifest: {courier_exception}',
+            'validation_info': {}
+        }
+
+        self._test_courier_exception(courier_exception,
+                                     PackageValidationError,
+                                     expected_dict,
+                                     caplog,
+                                     op_courier_push_raising)
+
+    def test_courier_invalid_bundle_error(self, caplog,
+                                          op_courier_push_raising):
+        """Test that the proper exception is raised when courier reports
+        a validation error after building bundle"""
+        validation_info = {'errors': ['this one', 'this one too']}
+        error = OpCourierBadBundle('Bad bundle.', validation_info)
+        expected_dict = {
+            'status': 400,
+            'error': 'PackageValidationError',
+            'message': f'Failed to push manifest: {error}',
+            'validation_info': validation_info
+        }
+
+        self._test_courier_exception(error,
+                                     PackageValidationError,
+                                     expected_dict,
+                                     caplog,
+                                     op_courier_push_raising)
+
+    def test_courier_quay_authorization_error(self, caplog,
+                                              op_courier_push_raising):
+        """Test that the proper exception is raised when courier reports
+        a Quay authorization error"""
+        error_response = {'error': 'something with authorization'}
+        error = OpCourierQuayErrorResponse('Quay error.', 403, error_response)
+        expected_dict = {
+            'status': 403,
+            'error': 'QuayAuthorizationError',
+            'message': f'Failed to push manifest: {error}',
+            'quay_response': error_response
+        }
+
+        self._test_courier_exception(error,
+                                     QuayAuthorizationError,
+                                     expected_dict,
+                                     caplog,
+                                     op_courier_push_raising)
+
+    def _test_courier_exception(self, courier_exception,
+                                expected_omps_exception, expected_dict,
+                                caplog, op_courier_push_raising):
+        qo = QuayOrganization(self.org, self.cnr_token)
+
+        with op_courier_push_raising(courier_exception):
+            with pytest.raises(expected_omps_exception) as exc_info, \
+                    caplog.at_level(logging.ERROR):
+                qo.push_operator_manifest(self.repo,
+                                          self.version,
+                                          self.source_dir)
+
+        e = exc_info.value
+        assert e.to_dict() == expected_dict
+        assert any('Operator courier call failed' in message
+                   for message in caplog.messages)
+
+    @pytest.mark.usefixtures('mocked_op_courier_push')
+    def test_push_operator_manifest_publish_repo(self):
         """Organizations marked as public will try to publish new
         repositories"""
         qo = QuayOrganization(self.org, self.cnr_token,
@@ -124,8 +238,8 @@ class TestQuayOrganization:
          .once())
         qo.push_operator_manifest(self.repo, self.version, self.source_dir)
 
-    def test_push_operator_manifest_publish_repo_no_public(
-            self, mocked_op_courier_push):
+    @pytest.mark.usefixtures('mocked_op_courier_push')
+    def test_push_operator_manifest_publish_repo_no_public(self):
         """Make repos won't be published for non-public organizations"""
         qo = QuayOrganization(self.org, self.cnr_token,
                               oauth_token='random', public=False)
@@ -135,8 +249,8 @@ class TestQuayOrganization:
          .never())
         qo.push_operator_manifest(self.repo, self.version, self.source_dir)
 
-    def test_push_operator_manifest_publish_repo_no_oauth(
-            self, mocked_op_courier_push, caplog):
+    @pytest.mark.usefixtures('mocked_op_courier_push')
+    def test_push_operator_manifest_publish_repo_no_oauth(self, caplog):
         """Make sure that proper warning msg is logged"""
         qo = QuayOrganization(self.org, self.cnr_token,
                               public=True)
@@ -367,6 +481,7 @@ class TestOrgManager:
         assert not unconfigured_org.oauth_access
 
 
-def test_get_cnr_api_version(mocked_quay_version):
+@pytest.mark.usefixtures('mocked_quay_version')
+def test_get_cnr_api_version():
     """Tests of quay.get_cnr_api_version function"""
     assert get_cnr_api_version() == "0.0.1-test"
