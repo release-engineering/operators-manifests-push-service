@@ -24,6 +24,7 @@ from omps.errors import (
     QuayPackageNotFound,
 )
 from omps.koji_util import KOJI
+from omps.manifests_util import ManifestBundle
 from omps.quay import ReleaseVersion, ORG_MANAGER
 
 logger = logging.getLogger(__name__)
@@ -133,7 +134,18 @@ def extract_zip_file_from_koji(
                           max_uncompressed_size=max_uncompressed_size)
 
 
-def _get_package_version(quay_org, repo, version=None):
+def get_package_version(quay_org, repo, version=None):
+    """Returns version of new release.
+    If version is passed, it will be validated
+    If no version is passed then quay repo is queried for versions and latest
+    version is incremented by 1 on major position.
+
+    :param QuayOrganization quay_org: Quay organization object
+    :param str repo: repository name
+    :param str|None version:
+    :rtype: str
+    :return: version to be used as release
+    """
     if version is None:
         try:
             latest_ver = quay_org.get_latest_release_version(repo)
@@ -150,11 +162,17 @@ def _get_package_version(quay_org, repo, version=None):
     return version
 
 
+def _get_reponame_from_manifests(source_dir):
+    bundle = ManifestBundle.from_dir(source_dir)
+    return bundle.package_name
+
+
 def _zip_flow(*, organization, repo, version, extract_manifest_func,
               extras_data=None):
     """
     :param str organization: quay.io organization
-    :param str repo: target repository
+    :param str|None repo: target repository (if not specified, will be taken
+         from manifest data)
     :param str|None version: version of operator manifest
     :param Callable[str, int] extract_manifest_func: function to retrieve operator
         manifests zip file. First argument of function is path to target dir
@@ -166,25 +184,30 @@ def _zip_flow(*, organization, repo, version, extract_manifest_func,
     cnr_token = extract_auth_token(request)
     quay_org = ORG_MANAGER.get_org(organization, cnr_token)
 
-    version = _get_package_version(quay_org, repo, version)
-    logger.info("Using release version: %s", version)
-
-    data = {
-        'organization': organization,
-        'repo': repo,
-        'version': version,
-    }
-    if extras_data:
-        data.update(extras_data)
+    data = {}
 
     with TemporaryDirectory() as tmpdir:
         max_size = current_app.config['ZIPFILE_MAX_UNCOMPRESSED_SIZE']
         extract_manifest_func(tmpdir, max_uncompressed_size=max_size)
-        extracted_files = os.listdir(tmpdir)
+        extracted_files = sorted(os.listdir(tmpdir))
         logger.info("Extracted files: %s", extracted_files)
         data['extracted_files'] = extracted_files
 
+        if repo is None:
+            repo = _get_reponame_from_manifests(tmpdir)
+
+        version = get_package_version(quay_org, repo, version)
+        logger.info("Using release version: %s", version)
+
         quay_org.push_operator_manifest(repo, version, tmpdir)
+
+    data.update({
+        'organization': organization,
+        'repo': repo,
+        'version': version,
+    })
+    if extras_data:
+        data.update(extras_data)
 
     resp = jsonify(data)
     resp.status_code = 200

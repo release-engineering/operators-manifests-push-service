@@ -3,6 +3,7 @@
 # see the LICENSE file for license
 #
 
+from collections import namedtuple
 import re
 import os
 import shutil
@@ -18,6 +19,10 @@ import requests_mock
 from omps.app import app
 from omps.koji_util import KOJI, KojiUtil
 from omps.settings import Config, TestConfig
+
+
+ArchiveMeta = namedtuple('ArchiveMeta', ['path', 'files', 'pkg_name', 'valid'])
+ManifestDirMeta = namedtuple('ManifestDirMeta', ['path', 'pkg_name', 'valid'])
 
 
 @pytest.fixture()
@@ -47,18 +52,34 @@ def datadir(tmpdir):
 
 
 @pytest.fixture
-def valid_manifests_archive(datadir, tmpdir):
-    """Construct valid operator manifest data zip archive"""
+def valid_manifest_dir(datadir):
+    """Return metadata and path to manifest"""
+    path = os.path.join(datadir, "marketplace_op_flat")
+    return ManifestDirMeta(
+        path=path,
+        pkg_name='marketplace',
+        valid=True
+    )
 
+
+@pytest.fixture
+def valid_manifests_archive(datadir, tmpdir, valid_manifest_dir):
+    """Construct valid operator manifest data zip archive"""
     path = os.path.join(tmpdir, 'test_archive.zip')
 
-    with zipfile.ZipFile(path, 'w') as zip_archive:
-        # for now we are happy just with empty file in that archive
-        zip_archive.write(
-            os.path.join(datadir, 'empty.yml'),
-            arcname='empty.yml')
+    files = os.listdir(valid_manifest_dir.path)
 
-    return path
+    with zipfile.ZipFile(path, 'w') as zip_archive:
+        for name in files:
+            zip_archive.write(
+                os.path.join(valid_manifest_dir.path, name),
+                arcname=name)
+
+    return ArchiveMeta(
+        path=path,
+        files=sorted(files),
+        pkg_name=valid_manifest_dir.pkg_name,
+        valid=valid_manifest_dir.valid)
 
 
 @pytest.fixture
@@ -110,14 +131,14 @@ def mocked_op_courier_push():
 def mocked_koji_archive_download(valid_manifests_archive):
     """Mock KojiUtil.koji_download_manifest_archive to return valid archive"""
     def fake_download(nvr, target_fd):
-        with open(valid_manifests_archive, 'rb') as zf:
+        with open(valid_manifests_archive.path, 'rb') as zf:
             target_fd.write(zf.read())
             target_fd.flush()
 
     orig = KOJI.download_manifest_archive
     try:
         KOJI.download_manifest_archive = fake_download
-        yield
+        yield valid_manifests_archive
     finally:
         KOJI.download_manifest_archive = orig
 

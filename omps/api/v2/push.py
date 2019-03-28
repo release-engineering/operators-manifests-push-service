@@ -3,23 +3,40 @@
 # see the LICENSE file for license
 #
 
+from functools import partial
+
+from flask import request
+
 from . import API
 from omps.api.v1.push import (
-    push_zipfile as push_zipfile_v1,
-    push_koji_nvr as push_koji_nvr_v1,
+    extract_zip_file_from_koji,
+    extract_zip_file_from_request,
+    _zip_flow,
 )
 
-@API.route("/<organization>/<repo>/zipfile", defaults={"version": None},
+
+@API.route("/<organization>/zipfile", defaults={"version": None},
            methods=('POST',))
-@API.route("/<organization>/<repo>/zipfile/<version>", methods=('POST',))
-def push_zipfile(organization, repo, version=None):
+@API.route("/<organization>/zipfile/<version>", methods=('POST',))
+def push_zipfile(organization, version=None):
     # V2 has the same implementation as V1
-    return push_zipfile_v1(organization, repo, version)
+    return _zip_flow(
+        organization=organization,
+        repo=None,
+        version=version,
+        extract_manifest_func=partial(extract_zip_file_from_request, request)
+    )
 
 
-@API.route("/<organization>/<repo>/koji/<nvr>", defaults={"version": None},
+@API.route("/<organization>/koji/<nvr>", defaults={"version": None},
            methods=('POST',))
-@API.route("/<organization>/<repo>/koji/<nvr>/<version>", methods=('POST',))
-def push_koji_nvr(organization, repo, nvr, version):
+@API.route("/<organization>/koji/<nvr>/<version>", methods=('POST',))
+def push_koji_nvr(organization, nvr, version):
     # V2 has the same implementation as V1
-    return push_koji_nvr_v1(organization, repo, nvr, version)
+    return _zip_flow(
+        organization=organization,
+        repo=None,
+        version=version,
+        extract_manifest_func=partial(extract_zip_file_from_koji, nvr),
+        extras_data={'nvr': nvr}
+    )

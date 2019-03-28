@@ -15,7 +15,7 @@ def test_push_zipfile(
         client, valid_manifests_archive, endpoint_push_zipfile,
         mocked_quay_io, mocked_op_courier_push, auth_header):
     """Test REST API for pushing operators form zipfile"""
-    with open(valid_manifests_archive, 'rb') as f:
+    with open(valid_manifests_archive.path, 'rb') as f:
         data = {
             'file': (f, f.name),
         }
@@ -31,7 +31,7 @@ def test_push_zipfile(
         'organization': endpoint_push_zipfile.org,
         'repo': endpoint_push_zipfile.repo,
         'version': endpoint_push_zipfile.version or constants.DEFAULT_RELEASE_VERSION,
-        'extracted_files': ['empty.yml'],
+        'extracted_files': valid_manifests_archive.files,
     }
     assert rv.get_json() == expected
 
@@ -108,6 +108,7 @@ def test_push_koji_nvr(
         client, endpoint_push_koji, mocked_quay_io, mocked_op_courier_push,
         auth_header, mocked_koji_archive_download):
     """Test REST API for pushing operators form koji by NVR"""
+    archive = mocked_koji_archive_download
     rv = client.post(
         endpoint_push_koji.url_path,
         headers=auth_header
@@ -118,7 +119,7 @@ def test_push_koji_nvr(
         'repo': endpoint_push_koji.repo,
         'version': endpoint_push_koji.version or constants.DEFAULT_RELEASE_VERSION,
         'nvr': endpoint_push_koji.nvr,
-        'extracted_files': ['empty.yml'],
+        'extracted_files': archive.files,
     }
     assert rv.get_json() == expected
 
