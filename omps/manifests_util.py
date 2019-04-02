@@ -11,7 +11,7 @@ import io
 import yaml
 
 from operatorcourier.api import build_and_verify
-from omps.errors import QuayCourierError
+from omps.errors import raise_for_courier_exception
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class ManifestBundle:
             bundle = build_and_verify(source_dir_path)
         except Exception as e:
             msg = "Operator courier failed: {}".format(e)
-            raise QuayCourierError(msg)
+            raise_for_courier_exception(e, new_msg=msg)
         return cls(bundle)
 
     def __init__(self, bundle):
