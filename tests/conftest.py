@@ -4,9 +4,11 @@
 #
 
 from collections import namedtuple
+from distutils import dir_util
 import re
 import os
 import shutil
+import tempfile
 from unittest.mock import Mock
 import zipfile
 
@@ -51,15 +53,36 @@ def datadir(tmpdir):
     return path
 
 
-@pytest.fixture
-def valid_manifest_dir(datadir):
+@pytest.fixture(params=[
+    ('marketplace_op_flat', 'marketplace'),
+    ('etcd_op_nested', 'etcd'),
+])
+def valid_manifest_dir(request, datadir):
     """Return metadata and path to manifest"""
-    path = os.path.join(datadir, "marketplace_op_flat")
+    manifest_dir_name, pkg_name = request.param
+    path = os.path.join(datadir, manifest_dir_name)
     return ManifestDirMeta(
         path=path,
-        pkg_name='marketplace',
+        pkg_name=pkg_name,
         valid=True
     )
+
+
+@pytest.fixture
+def valid_manifest_flatten_dir(valid_manifest_dir):
+    """Most operator-courier operations require flatten dir structure"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        operatorcourier.api.flatten(valid_manifest_dir.path, tmpdir)
+        if not os.listdir(tmpdir):
+            # if dest dir is empty, it means that flatten did noop and source dir
+            # has already flat structure
+            dir_util.copy_tree(valid_manifest_dir.path, tmpdir)
+
+        yield ManifestDirMeta(
+            path=tmpdir,
+            pkg_name=valid_manifest_dir.pkg_name,
+            valid=True
+        )
 
 
 @pytest.fixture
@@ -67,17 +90,20 @@ def valid_manifests_archive(datadir, tmpdir, valid_manifest_dir):
     """Construct valid operator manifest data zip archive"""
     path = os.path.join(tmpdir, 'test_archive.zip')
 
-    files = os.listdir(valid_manifest_dir.path)
+    start = valid_manifest_dir.path
+    res_files = []
 
     with zipfile.ZipFile(path, 'w') as zip_archive:
-        for name in files:
-            zip_archive.write(
-                os.path.join(valid_manifest_dir.path, name),
-                arcname=name)
+        for root, dirs, files in os.walk(start):
+            for name in files:
+                full_path = os.path.join(root, name)
+                rel_path = os.path.relpath(full_path, start)
+                zip_archive.write(full_path, arcname=rel_path)
+                res_files.append(rel_path)
 
     return ArchiveMeta(
         path=path,
-        files=sorted(files),
+        files=sorted(res_files),
         pkg_name=valid_manifest_dir.pkg_name,
         valid=valid_manifest_dir.valid)
 

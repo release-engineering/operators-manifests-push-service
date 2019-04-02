@@ -3,6 +3,7 @@
 # see the LICENSE file for license
 #
 
+from distutils import dir_util
 from functools import partial
 import logging
 import os
@@ -10,6 +11,8 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import zipfile
 
 from flask import jsonify, current_app, request
+from operatorcourier.api import flatten
+from operatorcourier.errors import OpCourierError
 
 from . import API
 from omps.api.common import extract_auth_token
@@ -22,6 +25,7 @@ from omps.errors import (
     OMPSUploadedFileError,
     OMPSExpectedFileError,
     QuayPackageNotFound,
+    QuayCourierError,
 )
 from omps.koji_util import KOJI
 from omps.manifests_util import ManifestBundle
@@ -167,6 +171,30 @@ def _get_reponame_from_manifests(source_dir):
     return bundle.package_name
 
 
+def _flatten_manifest_structure(source_dir, dest_dir):
+    try:
+        flatten(source_dir, dest_dir)
+    except OpCourierError as e:
+        raise QuayCourierError(
+            'Failed to flatten manifest directory: {}'.format(e)
+        )
+
+    if not os.listdir(dest_dir):
+        # if dest dir is empty, it means that flatten did noop and source dir
+        # has already flat structure
+        dir_util.copy_tree(source_dir, dest_dir)
+
+
+def _dir_files(dir_path):
+    res_files = []
+    for root, dirs, files in os.walk(dir_path):
+        for fname in files:
+            file_relpath = os.path.relpath(
+                os.path.join(root, fname), start=dir_path)
+            res_files.append(file_relpath)
+    return sorted(res_files)
+
+
 def _zip_flow(*, organization, repo, version, extract_manifest_func,
               extras_data=None):
     """
@@ -189,17 +217,21 @@ def _zip_flow(*, organization, repo, version, extract_manifest_func,
     with TemporaryDirectory() as tmpdir:
         max_size = current_app.config['ZIPFILE_MAX_UNCOMPRESSED_SIZE']
         extract_manifest_func(tmpdir, max_uncompressed_size=max_size)
-        extracted_files = sorted(os.listdir(tmpdir))
+        extracted_files = _dir_files(tmpdir)
         logger.info("Extracted files: %s", extracted_files)
         data['extracted_files'] = extracted_files
 
-        if repo is None:
-            repo = _get_reponame_from_manifests(tmpdir)
+        with TemporaryDirectory() as tmpdir_flatten:
+            # operator-courier supports only flat dir structure
+            _flatten_manifest_structure(tmpdir, tmpdir_flatten)
 
-        version = get_package_version(quay_org, repo, version)
-        logger.info("Using release version: %s", version)
+            if repo is None:
+                repo = _get_reponame_from_manifests(tmpdir_flatten)
 
-        quay_org.push_operator_manifest(repo, version, tmpdir)
+            version = get_package_version(quay_org, repo, version)
+            logger.info("Using release version: %s", version)
+
+            quay_org.push_operator_manifest(repo, version, tmpdir_flatten)
 
     data.update({
         'organization': organization,

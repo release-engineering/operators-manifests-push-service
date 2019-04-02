@@ -24,7 +24,7 @@ class TestManifestBundle:
 
         assert str(exc_info.value).startswith('Operator courier failed: ')
 
-    def test_package_name(self, valid_manifest_dir):
+    def test_package_name(self, valid_manifest_flatten_dir):
         """Test of property which provides package name"""
-        mb = ManifestBundle.from_dir(valid_manifest_dir.path)
-        assert mb.package_name == valid_manifest_dir.pkg_name
+        mb = ManifestBundle.from_dir(valid_manifest_flatten_dir.path)
+        assert mb.package_name == valid_manifest_flatten_dir.pkg_name
