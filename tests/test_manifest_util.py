@@ -7,7 +7,7 @@ import tempfile
 
 import pytest
 
-from omps.errors import QuayCourierError
+from omps.errors import PackageValidationError
 from omps.manifests_util import ManifestBundle
 
 
@@ -18,9 +18,11 @@ class TestManifestBundle:
         """Test if proper exception is raised when source data are invalid.
         Uses empty dir to force operator-courier to raise an exception
         """
-        with pytest.raises(QuayCourierError), \
+        with pytest.raises(PackageValidationError) as exc_info, \
                 tempfile.TemporaryDirectory() as tmpdir:
             ManifestBundle.from_dir(tmpdir)
+
+        assert str(exc_info.value).startswith('Operator courier failed: ')
 
     def test_package_name(self, valid_manifest_dir):
         """Test of property which provides package name"""
