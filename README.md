@@ -102,8 +102,8 @@ Is recommended to use [robot accounts](https://docs.quay.io/glossary/robot-accou
 
 ### REST API
 
-* **Under development** [REST API Version 2](docs/usage/v2.md)
-* [REST API Version 1](docs/usage/v1.md)
+* [REST API Version 2](docs/usage/v2.md)
+* **Deprecated** [REST API Version 1](docs/usage/v1.md)
 
 
 ## Development
