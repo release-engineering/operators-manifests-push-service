@@ -23,7 +23,7 @@ RUN dnf -y install \
 
 RUN if [ "$cacert_url" != "undefined" ]; then \
         cd /etc/pki/ca-trust/source/anchors \
-        && curl -O --insecure $cacert_url \
+        && curl -O $cacert_url \
         && update-ca-trust extract; \
     fi
 # This will allow a non-root user to install a custom root CA at run-time
