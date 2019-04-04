@@ -5,7 +5,6 @@
 
 import shutil
 import requests
-import pytest
 from operatorcourier import api as courier
 from tests.integration.utils import test_env
 
@@ -20,8 +19,8 @@ def test_invalid_zip(omps):
     response = omps.fetch_nvr(organization=test_env['test_namespace'],
                               repo=test_env['test_package'], nvr=nvr)
 
-    assert response.status_code == requests.codes.internal_server_error
-    assert response.json()['error'] == 'QuayCourierError'
+    assert response.status_code == requests.codes.bad_request
+    assert response.json()['error'] == 'PackageValidationError'
     assert 'bundle is invalid' in response.json()['message']
 
 
@@ -188,38 +187,3 @@ def test_increment_version(omps, quay, tmp_path):
     assert quay.get_release(test_env['test_namespace'],
                             test_env['test_package'], next_version,
                             authorization=None)
-
-
-@pytest.mark.skipif(not test_env.get('private_org'),
-                    reason='No private organization configured.')
-def test_private_organization(private_omps, private_quay):
-    """
-    """
-    namespace = test_env['private_org']['namespace']
-    package = test_env['private_org']['package']
-    nvr = test_env['koji_builds']['valid_zip']
-    version = '1.0.0'
-    private_quay.delete(namespace, package)
-
-    response = private_omps.fetch_nvr(organization=namespace,
-                                      repo=package, nvr=nvr)
-
-    assert response.json() == {
-        'extracted_files': [
-            'crd.yaml',
-            'csv.yaml',
-            'packages.yaml'
-        ],
-        'nvr': nvr,
-        'organization': namespace,
-        'repo': package,
-        'version': version,
-    }
-    assert response.status_code == requests.codes.ok
-
-    assert private_quay.get_release(namespace, package, version)
-
-    with pytest.raises(requests.HTTPError) as err:
-        private_quay.get_release(namespace, package, version,
-                                 authorization=None)
-        assert '403' in str(err.value)

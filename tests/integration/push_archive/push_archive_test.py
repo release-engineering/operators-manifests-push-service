@@ -6,6 +6,7 @@
 import shutil
 import pytest
 import requests
+import yaml
 from tests.integration.utils import test_env
 
 
@@ -204,8 +205,8 @@ def test_organization_unaccessible_in_quay(omps, tmp_path):
     response = omps.upload(organization=organization,
                            repo=test_env['test_package'], archive=archive)
 
-    assert response.status_code == requests.codes.internal_server_error
-    assert response.json()['error'] == 'QuayPackageError'
+    assert response.status_code == requests.codes.forbidden
+    assert response.json()['error'] == 'QuayAuthorizationError'
     assert 'Cannot retrieve information about package' in response.json()['message']
 
 
@@ -234,3 +235,53 @@ def test_upload_invalid_artifact(omps, tmp_path):
     assert response.status_code == requests.codes.bad_request
     assert response.json()['error'] == 'PackageValidationError'
     assert 'bundle is invalid' in response.json()['message']
+
+
+@pytest.mark.skipif(not test_env.get('private_org'),
+                    reason='No private organization configured.')
+def test_private_organization(private_omps, private_quay, tmp_path_factory):
+    """
+    When packages are pushed to an organization, which is not configured
+        to hold public packages,
+    Then a newly created package is private.
+    """
+    namespace = test_env['private_org']['namespace']
+    package = test_env['private_org']['package']
+    version = '1.0.0'
+    private_quay.delete(namespace, package)
+
+    # Make sure artifact's packageName matches package name used for the push.
+    artifacts_dir = tmp_path_factory.getbasetemp() / 'artifacts'
+    shutil.copytree('tests/integration/artifacts/valid/', artifacts_dir)
+
+    with open(artifacts_dir / 'packages.yaml', 'r') as fd:
+        packages_yaml = yaml.safe_load(fd)
+
+    with open(artifacts_dir / 'packages.yaml', 'w') as fd:
+        packages_yaml['packageName'] = 'int-test-private'
+        yaml.dump(packages_yaml, fd)
+
+    archive_dir = tmp_path_factory.mktemp('archive')
+    archive = shutil.make_archive(archive_dir / 'archive', 'zip', artifacts_dir)
+
+    response = private_omps.upload(organization=namespace,
+                                   repo=package, archive=archive)
+
+    assert response.json() == {
+        'extracted_files': [
+            'crd.yaml',
+            'csv.yaml',
+            'packages.yaml'
+        ],
+        'organization': namespace,
+        'repo': package,
+        'version': version,
+    }
+    assert response.status_code == requests.codes.ok
+
+    assert private_quay.get_release(namespace, package, version)
+
+    with pytest.raises(requests.HTTPError) as err:
+        private_quay.get_release(namespace, package, version,
+                                 authorization=None)
+        assert '403' in str(err.value)
