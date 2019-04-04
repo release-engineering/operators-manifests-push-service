@@ -16,6 +16,7 @@ from operatorcourier import api as courier_api
 from .errors import (
     QuayPackageNotFound,
     QuayPackageError,
+    QuayAuthorizationError,
     raise_for_courier_exception
 )
 
@@ -269,21 +270,25 @@ class QuayOrganization:
         :rtype: List[str]
         """
         def _raise(exc):
-            raise QuayPackageError(
-                "Cannot retrieve information about package {}/{}: {}".format(
-                    self._organization, repo, exc
-                ))
+            msg = ("Cannot retrieve information about package {}/{}: {}"
+                   .format(self._organization, repo, exc))
+
+            if isinstance(exc, requests.exceptions.HTTPError):
+                if exc.response.status_code == 403:
+                    try:
+                        quay_response = exc.response.json()
+                    except ValueError:
+                        quay_response = {}
+                    raise QuayAuthorizationError(msg, quay_response)
+                elif exc.response.status_code == 404:
+                    msg = ("Package {}/{} not found"
+                           .format(self._organization, repo))
+                    raise QuayPackageNotFound(msg)
+
+            raise QuayPackageError(msg)
 
         try:
             res = self._get_repo_content(repo)
-        except requests.exceptions.HTTPError as http_e:
-            if http_e.response.status_code == 404:
-                raise QuayPackageNotFound(
-                    "Package {}/{} not found".format(
-                        self._organization, repo
-                    )
-                )
-            _raise(http_e)
         except requests.exceptions.RequestException as e:
             _raise(e)
 
