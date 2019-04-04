@@ -19,7 +19,7 @@ def test_delete_version(omps, quay, tmp_path):
     if not quay.get_release(test_env['test_namespace'],
                             test_env['test_package'], version):
         archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                      'tests/integration/push_archive/artifacts/')
+                                      'tests/integration/artifacts/valid/')
         response = omps.upload(organization=test_env['test_namespace'],
                                repo=test_env['test_package'],
                                version=version, archive=archive)
@@ -50,7 +50,7 @@ def test_version_does_not_exist(omps, quay, tmp_path):
     if not quay.get_release(test_env['test_namespace'],
                             test_env['test_package'], version):
         archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                      'tests/integration/push_archive/artifacts/')
+                                      'tests/integration/artifacts/valid/')
         response = omps.upload(organization=test_env['test_namespace'],
                                repo=test_env['test_package'],
                                version=version, archive=archive)
@@ -79,7 +79,7 @@ def test_delete_all_versions(omps, quay, tmp_path):
     # Ensure there are at least 2 releases.
     if len(quay.get_releases(test_env['test_namespace'], test_env['test_package'])) < 2:
         archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                      'tests/integration/push_archive/artifacts/')
+                                      'tests/integration/artifacts/valid/')
         for version in ['8.0.0', '8.0.1']:
             response = omps.upload(organization=test_env['test_namespace'],
                                    repo=test_env['test_package'],
@@ -155,7 +155,7 @@ def test_increment_version_after_delete(omps, quay, tmp_path,
     quay.delete_releases('/'.join([test_env['test_namespace'],
                                    test_env['test_package']]), to_delete)
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
     for version in to_upload:
         response = omps.upload(organization=test_env['test_namespace'],
                                repo=test_env['test_package'],
