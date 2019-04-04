@@ -341,6 +341,26 @@ class TestQuayOrganization:
             releases = qo.get_releases_raw(repo)
             assert sorted(releases) == ["1.0.0", "1.0.1-random", "1.2.0"]
 
+    @pytest.mark.parametrize('error_code, expected_exc_type', [
+        (403, QuayAuthorizationError),
+        (404, QuayPackageNotFound),
+        (500, QuayPackageError)
+    ])
+    def test_get_releases_raw_errors(self, error_code, expected_exc_type):
+        """Test that the proper exceptions are raised for various kinds
+        of HTTP errors"""
+        org = "test_org"
+        repo = "test_repo"
+
+        qo = QuayOrganization(org, TOKEN)
+
+        with requests_mock.Mocker() as m:
+            m.get(f'/cnr/api/v1/packages/{org}/{repo}',
+                  status_code=error_code)
+
+            with pytest.raises(expected_exc_type):
+                qo.get_releases_raw(repo)
+
     def test_get_releases(self):
         """Test if only proper releases are used and returned"""
         org = "test_org"
