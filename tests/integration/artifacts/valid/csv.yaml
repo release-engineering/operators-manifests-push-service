@@ -3,12 +3,12 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: marketplace-operator.v0.0.1
+  name: int-test-operator.v0.0.1
   namespace: placeholder
 spec:
-  displayName: marketplace-operator
+  displayName: int-test-operator
   description: Short description.
-  keywords: ['marketplace', 'catalog', 'olm', 'admin']
+  keywords: ['int-test', 'catalog', 'olm', 'admin']
   version: 0.0.1
   maturity: alpha
   maintainers:
@@ -17,7 +17,7 @@ spec:
   provider:
     name: Red Hat
   labels:
-    name: marketplace-operator
+    name: int-test-operator
   selector:
     matchLabels:
       name: marketplace-operator
