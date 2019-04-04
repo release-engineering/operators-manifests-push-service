@@ -33,9 +33,24 @@ class OMPS:
         _headers: Headers to be used, when talking to Quay.
             No header will be set if None.
     """
+    _ENDPOINTS = {
+        'v1': {
+            'upload': '{api}/{org}/{repo}/zipfile{version}',
+            'fetch': '{api}/{org}/{repo}/koji/{nvr}{version}',
+            'delete': '{api}/{org}/{repo}{version}'
+        },
+        'v2': {
+            'upload': '{api}/{org}/zipfile{version}',
+            'fetch': '{api}/{org}/koji/{nvr}{version}',
+            'delete': '{api}/{org}/{repo}{version}'
+        }
+    }
+
     def __init__(self, api_url, quay_token=None):
         self._api_url = api_url
         self._headers = {'Authorization': quay_token} if quay_token else {}
+        api_version = api_url.split('/')[-1]
+        self._endpoints = OMPS._ENDPOINTS[api_version]
 
     def upload(self, organization, repo, archive, version=None,
                field='file'):
@@ -54,7 +69,7 @@ class OMPS:
 
         Raises: None.
         """
-        url = '{api}/{org}/{repo}/zipfile{version}'.format(
+        url = self._endpoints['upload'].format(
             api=self._api_url,
             org=organization,
             repo=repo,
@@ -77,7 +92,7 @@ class OMPS:
 
         Raises: None.
         """
-        url = '{api}/{org}/{repo}{version}'.format(
+        url = self._endpoints['delete'].format(
             api=self._api_url,
             org=organization,
             repo=repo,
@@ -94,7 +109,7 @@ class OMPS:
 
         Raises:
         """
-        url = '{api}/{org}/{repo}/koji/{nvr}{version}'.format(
+        url = self._endpoints['fetch'].format(
             api=self._api_url,
             org=organization,
             repo=repo,
