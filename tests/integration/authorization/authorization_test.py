@@ -20,7 +20,7 @@ def test_upload_without_authorization(no_auth_omps, tmp_path):
     Upload fails, when no 'Authorization' header is provided.
     """
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
     response = no_auth_omps.upload(organization=test_env['test_namespace'],
                                    repo=test_env['test_package'], archive=archive)
 
@@ -33,7 +33,7 @@ def test_delete_without_authorization(no_auth_omps, omps, quay, tmp_path):
     Deleting a version fails, when no 'Authorization' header is provided.
     """
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
     response = omps.upload(organization=test_env['test_namespace'],
                            repo=test_env['test_package'], archive=archive)
     response.raise_for_status()

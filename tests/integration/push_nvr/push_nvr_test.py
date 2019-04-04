@@ -137,7 +137,7 @@ def test_version_exists(omps, quay, tmp_path):
     version = '8.0.1'
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
 
     if not quay.get_release(test_env['test_namespace'],
                             test_env['test_package'], version):
@@ -166,7 +166,7 @@ def test_increment_version(omps, quay, tmp_path):
 
     quay.delete(test_env['test_namespace'], test_env['test_package'])
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
     omps.upload(organization=test_env['test_namespace'],
                 repo=test_env['test_package'], version=version, archive=archive)
 

@@ -23,7 +23,7 @@ def test_initial_upload(omps, quay, tmp_path):
                                    test_env['test_package']]), releases)
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
     response = omps.upload(organization=test_env['test_namespace'],
                            repo=test_env['test_package'], archive=archive).json()
 
@@ -52,7 +52,7 @@ def test_upload_with_version(omps, quay, tmp_path):
                                        test_env['test_package']]), [version])
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
     response = omps.upload(organization=test_env['test_namespace'],
                            repo=test_env['test_package'],
                            version=version, archive=archive).json()
@@ -78,7 +78,7 @@ def test_increment_version(omps, quay, tmp_path):
     next_release = '5.0.0'
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
 
     # Make sure that only the expected releases are present
     package_releases = set(release['release'] for release in
@@ -112,7 +112,7 @@ def test_version_exists(omps, quay, tmp_path):
     release_used = '5.0.0'
 
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
 
     if not quay.get_release(test_env['test_namespace'],
                             test_env['test_package'], release_used):
@@ -141,7 +141,7 @@ def test_incorrect_version(omps, tmp_path, version):
     then the push fails.
     """
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
     response = omps.upload(organization=test_env['test_namespace'],
                            repo=test_env['test_package'],
                            version=version, archive=archive)
@@ -184,7 +184,7 @@ def test_no_file_field(omps, tmp_path):
     The ZIP file uploaded must be assigned to the 'file' field.
     """
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
     response = omps.upload(organization=test_env['test_namespace'],
                            repo=test_env['test_package'],
                            archive=archive, field='archive')
@@ -200,7 +200,7 @@ def test_organization_unaccessible_in_quay(omps, tmp_path):
     """
     organization = 'martian-green-operators'
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/artifacts/')
+                                  'tests/integration/artifacts/valid/')
     response = omps.upload(organization=organization,
                            repo=test_env['test_package'], archive=archive)
 
@@ -213,7 +213,7 @@ def test_upload_password_protected_zip(omps):
     """
     Push fails, if the ZIP-file is password-protected.
     """
-    archive = 'tests/integration/push_archive/encrypted.zip'
+    archive = 'tests/integration/artifacts/encrypted.zip'
     response = omps.upload(organization=test_env['test_namespace'],
                            repo=test_env['test_package'], archive=archive)
 
@@ -227,10 +227,10 @@ def test_upload_invalid_artifact(omps, tmp_path):
     Push fails, if the artifact does not pass quay-courier validation.
     """
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
-                                  'tests/integration/push_archive/invalid_artifacts/')
+                                  'tests/integration/artifacts/invalid/')
     response = omps.upload(organization=test_env['test_namespace'],
                            repo=test_env['test_package'], archive=archive)
 
-    assert response.status_code == requests.codes.internal_server_error
-    assert response.json()['error'] == 'QuayCourierError'
+    assert response.status_code == requests.codes.bad_request
+    assert response.json()['error'] == 'PackageValidationError'
     assert 'bundle is invalid' in response.json()['message']
