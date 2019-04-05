@@ -26,7 +26,10 @@ class KojiUtil:
     def initialize(self, conf):
         self._kojihub_url = conf.kojihub_url
         self._kojiroot_url = conf.kojiroot_url
-        self._session = koji.ClientSession(self._kojihub_url)
+        opts = dict()
+        if conf.request_timeout is not None:
+            opts['timeout'] = conf.request_timeout
+        self._session = koji.ClientSession(self._kojihub_url, opts=opts)
 
         if not self._kojihub_url.endswith('/'):
             self._kojihub_url += '/'

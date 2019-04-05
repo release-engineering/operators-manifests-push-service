@@ -156,10 +156,12 @@ class OrgManager:
 
     def __init__(self):
         self._organizations = None
+        self._timeout = None
 
     def initialize(self, config):
         self.validate_conf(config.organizations)
         self._organizations = config.organizations
+        self._timeout = config.request_timeout
         for org_name, org_conf in self._organizations.items():
             logger.info(
                 'Organization "%s" configured: public=%s, oauth_access=%s',
@@ -174,7 +176,8 @@ class OrgManager:
             organization,
             cnr_token,
             oauth_token=org_config.get('oauth_token'),
-            public=org_config.get('public', False)
+            public=org_config.get('public', False),
+            timeout=self._timeout
         )
 
 
@@ -182,13 +185,15 @@ class QuayOrganization:
     """Class for operations on organization"""
 
     def __init__(
-        self, organization, cnr_token, oauth_token=None, public=False
+        self, organization, cnr_token, oauth_token=None, public=False,
+        timeout=None
     ):
         """
         :param organization: organization name
         :param cnr_token: organization login token (cnr endpoint)
         :param oauth_token: oauth_access_token
         :param public: organization is public
+        :param int timeout: timeout for Quay requests in seconds
         """
         self.logger = logging.getLogger(
             '{0}[{1}]'.format(self.__class__.__name__, organization))
@@ -197,6 +202,7 @@ class QuayOrganization:
         self._token = cnr_token
         self._oauth_token = oauth_token
         self._public = public
+        self._timeout = timeout
 
     @property
     def public(self):
@@ -254,7 +260,7 @@ class QuayOrganization:
             r=repo,
         )
         headers = {'Authorization': self._token}
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=headers, timeout=self._timeout)
 
         res.raise_for_status()
         return res.json()
@@ -364,7 +370,7 @@ class QuayOrganization:
             'Deleting release %s/%s, v:%s',
             self._organization, repo, version)
 
-        r = requests.delete(url, headers=headers)
+        r = requests.delete(url, headers=headers, timeout=self._timeout)
 
         if r.status_code != requests.codes.ok:
 
@@ -397,22 +403,23 @@ class QuayOrganization:
             "Authorization": "Bearer {}".format(self._oauth_token)
         }
         self.logger.info("Publishing repository %s", repo)
-        r = requests.post(url, headers=headers, json=data)
+        r = requests.post(url, headers=headers, json=data, timeout=self._timeout)
         if r.status_code != requests.codes.ok:
             msg = get_error_msg(r)
             self.logger.error("Publishing repository: %s", msg)
             raise QuayPackageError(msg)
 
 
-def get_cnr_api_version():
+def get_cnr_api_version(timeout):
     """Returns quay's CNR api version
 
+    :param int timeout: timeout for Quay requests in seconds
     :raises: HTTPError if version cannot be fetched
     :rtype: str
     :returns: API version
     """
     url = "https://quay.io/cnr/version"
-    r = requests.get(url)
+    r = requests.get(url, timeout=timeout)
     r.raise_for_status()
     return r.json()['cnr-api']
 
