@@ -7,6 +7,7 @@ import shutil
 import pytest
 import requests
 import yaml
+from distutils import dir_util
 from tests.integration.utils import test_env
 
 
@@ -251,8 +252,9 @@ def test_private_organization(private_omps, private_quay, tmp_path_factory):
     private_quay.delete(namespace, package)
 
     # Make sure artifact's packageName matches package name used for the push.
-    artifacts_dir = tmp_path_factory.getbasetemp() / 'artifacts'
-    shutil.copytree('tests/integration/artifacts/valid/', artifacts_dir)
+    artifacts_dir = tmp_path_factory.mktemp('artifacts')
+    dir_util.copy_tree('tests/integration/artifacts/valid/',
+                       artifacts_dir.as_posix())
 
     with open(artifacts_dir / 'packages.yaml', 'r') as fd:
         packages_yaml = yaml.safe_load(fd)

@@ -23,6 +23,21 @@ def load_test_env():
 test_env = load_test_env()
 
 
+def bundles_equal(left, right):
+    for field in ('clusterServiceVersions', 'customResourceDefinitions', 'packages'):
+        ld = yaml.safe_load(left['data'][field])
+        rd = yaml.safe_load(right['data'][field])
+
+        assert isinstance(ld, list)
+        assert isinstance(rd, list)
+
+        for element in ld:
+            if element not in rd:
+                return False
+
+    return True
+
+
 class OMPS:
     """OMPS service.
 
