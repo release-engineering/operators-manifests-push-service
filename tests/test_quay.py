@@ -504,4 +504,4 @@ class TestOrgManager:
 @pytest.mark.usefixtures('mocked_quay_version')
 def test_get_cnr_api_version():
     """Tests of quay.get_cnr_api_version function"""
-    assert get_cnr_api_version() == "0.0.1-test"
+    assert get_cnr_api_version(0) == "0.0.1-test"

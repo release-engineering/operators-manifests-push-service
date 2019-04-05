@@ -121,7 +121,12 @@ class Config(object):
             'type': dict,
             'default': {},
             'desc': 'Configuration of organizations'
-        }
+        },
+        'request_timeout': {
+            'type': int,
+            'default': None,
+            'desc': 'Timeout in seconds for Koji and Quay requests'
+        },
     }
 
     def __init__(self, conf_section_obj):

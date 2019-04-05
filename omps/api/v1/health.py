@@ -5,7 +5,7 @@
 
 import logging
 
-from flask import jsonify
+from flask import jsonify, current_app
 import requests
 from requests.exceptions import RequestException
 
@@ -41,7 +41,7 @@ def ping():
     # quay.io status
     try:
         # try to retrieve API version to check if quay.io is alive
-        get_cnr_api_version()
+        get_cnr_api_version(current_app.config['REQUEST_TIMEOUT'])
     except RequestException as e:
         logger.error('Quay version check: %s', e)
         quay_result = _err(e)
