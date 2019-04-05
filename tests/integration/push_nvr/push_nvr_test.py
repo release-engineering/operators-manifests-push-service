@@ -6,7 +6,7 @@
 import shutil
 import requests
 from operatorcourier import api as courier
-from tests.integration.utils import test_env
+from tests.integration.utils import test_env, bundles_equal
 
 
 def test_invalid_zip(omps):
@@ -76,7 +76,7 @@ def test_valid_zip_default_version(omps, quay, koji, tmp_path):
             'csv.yaml',
             'packages.yaml'
         ],
-        'nvr': test_env['koji_builds']['valid_zip'],
+        'nvr': nvr,
         'organization': test_env['test_namespace'],
         'repo': test_env['test_package'],
         'version': '1.0.0',
@@ -93,7 +93,7 @@ def test_valid_zip_default_version(omps, quay, koji, tmp_path):
 
     # Note: this only confirms that OMPS used the right data from Koji,
     #       but tells nothing about the correctness of that data.
-    assert quay_bundle == koji_bundle
+    assert bundles_equal(quay_bundle, koji_bundle)
 
 
 def test_valid_zip_defined_version(omps, quay):
