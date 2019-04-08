@@ -27,6 +27,9 @@ class ProdConfig:
     KOJIHUB_URL = 'https://koji.fedoraproject.org/kojihub'
     KOJIROOT_URL = 'https://kojipkgs.fedoraproject.org/'
 
+    # Timeout in seconds for Koji and Quay requests
+    REQUEST_TIMEOUT = 28
+
     # Organization access
     organizations = {
         "public-org": {
@@ -71,6 +74,11 @@ docker run --rm -p 8080:8080 -e CA_URL='http://example.com/ca-cert.crt' omps:lat
 Running container with customized number of workers (default: 8):
 ```bash
 docker run --rm -p 8080:8080 -e WORKERS_NUM=6 omps:latest
+```
+
+Running container with custom worker timeout (default: 30 seconds):
+```bash
+docker run --rm -p 8080:8080 -e WORKER_TIMEOUT=60 omps:latest
 ```
 
 
