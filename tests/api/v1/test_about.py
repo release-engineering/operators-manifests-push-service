@@ -3,6 +3,7 @@
 # see the LICENSE file for license
 #
 
+import pkg_resources
 import requests
 from omps import __version__ as version
 
@@ -14,5 +15,6 @@ def test_about(client):
 
     assert rv.status_code == requests.codes.ok
     assert rv.get_json() == {
-        'version': version
+        'version': version,
+        'operatorcourier': pkg_resources.get_distribution('operator-courier').version,
     }
