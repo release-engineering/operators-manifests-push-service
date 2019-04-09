@@ -135,10 +135,12 @@ pip install '.[test]'
 
 Project is integrated with tox:
 
-* please install `rpm-devel` (Fedora) or `rpm` (Ubuntu) package to be able
-build `koji` dependency `rpm-py-installer` in `tox`:
+* please install `rpm-devel` and `krb5-devel`  (Fedora) or `rpm` and
+  `libkrb5-dev` (Ubuntu) package to be able build `koji` dependency
+  `rpm-py-installer` in `tox`:
+
 ```bash
-sudo dnf install -y rpm-devel
+sudo dnf install -y rpm-devel krb5-devel
 ```
 * run:
 ```bash
