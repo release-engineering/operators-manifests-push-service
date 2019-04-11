@@ -106,7 +106,7 @@ def test_push_zipfile_encrypted(
 
 def test_push_koji_nvr(
         client, endpoint_push_koji, mocked_quay_io, mocked_op_courier_push,
-        auth_header, mocked_koji_archive_download):
+        auth_header, mocked_koji_archive_download, mocked_greenwave):
     """Test REST API for pushing operators form koji by NVR"""
     archive = mocked_koji_archive_download
     rv = client.post(
@@ -122,6 +122,7 @@ def test_push_koji_nvr(
         'extracted_files': archive.files,
     }
     assert rv.get_json() == expected
+    mocked_greenwave.assert_called_once_with(endpoint_push_koji.nvr)
 
 
 def test_push_koji_unauthorized(client, endpoint_push_koji):
