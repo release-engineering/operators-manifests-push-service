@@ -35,6 +35,7 @@ from omps.settings import Config, DefaultConfig
         "https://kojipkgs.fedoraproject.org/"
     ),
     ("ORGANIZATIONS", {}),
+    ("GREENWAVE", None),
 ))
 def test_defaults(key, expected):
     """Test if defaults are properly propagated to app config"""
@@ -149,3 +150,50 @@ def test_organizations_invalid(conf):
 
     with pytest.raises(ValueError):
         Config(ConfClass)
+
+
+def test_greenwave():
+    """Test Greenwave settings"""
+    expected = {
+        "url": "https://greenwave.example.com",
+        "context": "omps_push",
+        "product_version": "cvp"
+    }
+
+    class ConfClass(DefaultConfig):
+        GREENWAVE = expected
+
+    conf = Config(ConfClass)
+    assert conf.greenwave == expected
+
+
+@pytest.mark.parametrize('conf', [
+    {},
+    {
+        "url": "https://greenwave.example.com",
+    }, {
+        "context": "omps_push",
+    }, {
+        "product_version": "cvp"
+    }, {
+        "url": "https://greenwave.example.com",
+        "context": "omps_push",
+    }, {
+        "url": "https://greenwave.example.com",
+        "context": "omps_push",
+        "product_version": None
+    }, {
+        "url": None,
+        "context": "omps_push",
+        "product_version": "cvp"
+    }
+
+])
+def test_greenwave_invalid(conf):
+    """Test if invalid config is properly reported"""
+
+    class ConfClass(DefaultConfig):
+        GREENWAVE = conf
+
+    with pytest.raises(ValueError):
+        conf = Config(ConfClass)

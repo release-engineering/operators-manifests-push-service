@@ -27,6 +27,7 @@ from omps.errors import (
     QuayPackageNotFound,
     QuayCourierError,
 )
+from omps.greenwave import GREENWAVE
 from omps.koji_util import KOJI
 from omps.manifests_util import ManifestBundle
 from omps.quay import ReleaseVersion, ORG_MANAGER
@@ -134,6 +135,10 @@ def extract_zip_file_from_koji(
     """
     with NamedTemporaryFile('wb', suffix='.zip') as tmpf:
         KOJI.download_manifest_archive(nvr, tmpf)
+        # running KOJI methods first, it has checks that should pass
+        # even before we bother greenwave
+        if GREENWAVE.enabled:
+            GREENWAVE.check_build(nvr)
         _extract_zip_file(tmpf.name, target_dir,
                           max_uncompressed_size=max_uncompressed_size)
 

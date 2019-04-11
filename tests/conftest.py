@@ -19,6 +19,7 @@ import requests
 import requests_mock
 
 from omps.app import app
+from omps.greenwave import GREENWAVE
 from omps.koji_util import KOJI, KojiUtil
 from omps.settings import Config, TestConfig
 
@@ -227,3 +228,21 @@ def mocked_quay_version():
     with requests_mock.Mocker() as m:
         m.get("/cnr/version", json={"cnr-api": "0.0.1-test"})
         yield m
+
+
+@pytest.fixture
+def mocked_greenwave():
+    """Mock global GREENWAVE.check_build to pass without connecting to
+    Greenwave"""
+
+    orig = GREENWAVE.check_build
+    orig_url = GREENWAVE._url
+    try:
+        m = Mock(return_value=None)
+        GREENWAVE.check_build = m
+        # we have to specify URL to fake GREENWAVE.enabled property
+        GREENWAVE._url = "https://test-greenwave.example.com"
+        yield m
+    finally:
+        GREENWAVE.check_build = orig
+        GREENWAVE._url = orig_url

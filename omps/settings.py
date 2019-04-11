@@ -10,6 +10,7 @@ import sys
 from jsonschema.exceptions import ValidationError
 
 from . import constants
+from .greenwave import GreenwaveHelper
 from .quay import OrgManager
 
 
@@ -127,6 +128,11 @@ class Config(object):
             'default': None,
             'desc': 'Timeout in seconds for Koji and Quay requests'
         },
+        'greenwave': {
+            'type': dict,
+            'default': None,
+            'desc': 'Greenwave configuration'
+        },
     }
 
     def __init__(self, conf_section_obj):
@@ -242,3 +248,15 @@ class Config(object):
         except ValidationError as e:
             raise ValueError("Organizations config: {}".format(e))
         self._organizations = s
+
+    def _setifok_greenwave(self, s):
+        if s is None:
+            # greenwave disabled
+            self._greenwave = s
+            return
+
+        try:
+            GreenwaveHelper.validate_conf(s)
+        except ValidationError as e:
+            raise ValueError(f"Grenwave config: {e}")
+        self._greenwave = s

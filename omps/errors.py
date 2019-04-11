@@ -134,6 +134,42 @@ class KojiError(OMPSError):
     code = 500
 
 
+class GreenwaveError(OMPSError):
+    """Failed to retrieve data from Greenwave"""
+    code = 500
+
+    def __init__(self, msg, greenwave_response):
+        """
+        :param msg: the message this exception should have
+        :param greenwave_response: response from greenwave
+        """
+        super().__init__(msg)
+        self.greenwave_response = greenwave_response
+
+    def to_dict(self):
+        data = super().to_dict()
+        data['greenwave_response'] = self.greenwave_response
+        return data
+
+
+class GreenwaveUnsatisfiedError(OMPSError):
+    """Didn't meet policy expectations"""
+    code = 400
+
+    def __init__(self, msg, greenwave_response):
+        """
+        :param msg: the message this exception should have
+        :param greenwave_response: response from greenwave
+        """
+        super().__init__(msg)
+        self.greenwave_response = greenwave_response
+
+    def to_dict(self):
+        data = super().to_dict()
+        data['greenwave_response'] = self.greenwave_response
+        return data
+
+
 def raise_for_courier_exception(e, new_msg=None):
     """React to operator-courier errors by raising the proper OMPS error
 

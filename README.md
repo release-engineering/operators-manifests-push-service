@@ -37,6 +37,13 @@ class ProdConfig:
             "oauth_token" "application_access_token_goes_here"
         }
     }
+
+    # Greenwave integration
+    GREENWAVE = {
+        "url": "https://greenwave.example.com",
+        "context": "omps_push",
+        "product_version": "cvp"
+    }
 ```
 
 ### Configuration of quay's organizations
@@ -57,6 +64,17 @@ Organizations configuration options:
 * `public`: if `True` OMPS publish all new repositories in that organization
  (requires `oauth_token`). Default is `False` repositories are private.
 * `oauth_token`: application oauth access token from quay.io
+
+### Greenwave integration
+
+This is optional. When `GREENWAVE` settings are missing in config file checks
+are skipped.
+
+[Greenwave](https://pagure.io/greenwave) integration allows OMPS to check if
+koji builds meets policies defined in Greenwave before operators from koji
+builds are pushed to quay.
+(Note: this check is skipped for pushing from zipfiles directly)
+
 
 ## Running service
 
