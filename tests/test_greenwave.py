@@ -136,3 +136,47 @@ class TestGreenwaveHelper:
             )
             with pytest.raises(GreenwaveError):
                 gh.check_build(self.test_nvr)
+
+    def test_get_version(self):
+        """Test of getting greenwave version"""
+        gh = self._get_instance()
+        version = "1.2.3"
+        with requests_mock.Mocker() as m:
+            m.get(
+                f"{self.g_url}/api/v1.0/about",
+                json={
+                    "version": version
+                },
+            )
+            assert gh.get_version() == version
+
+    def test_get_version_unconfigured(self):
+        """Test if proper exception is raised when Greenwave is not
+        configured"""
+        gh = GreenwaveHelper()
+        with pytest.raises(RuntimeError):
+            gh.get_version()
+
+    def test_get_version_missing_key(self):
+        """Test if proper exception si raised when response doesn't contain
+        version key"""
+        gh = self._get_instance()
+        with requests_mock.Mocker() as m:
+            m.get(
+                f"{self.g_url}/api/v1.0/about",
+                json={},
+            )
+            with pytest.raises(GreenwaveError):
+                gh.get_version()
+
+    def test_get_version_error_response(self):
+        """Test if proper exception is raised when error response is received
+        """
+        gh = self._get_instance()
+        with requests_mock.Mocker() as m:
+            m.get(
+                f"{self.g_url}/api/v1.0/about",
+                status_code=requests.codes.server_error
+            )
+            with pytest.raises(GreenwaveError):
+                gh.get_version()
