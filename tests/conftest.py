@@ -246,3 +246,20 @@ def mocked_greenwave():
     finally:
         GREENWAVE.check_build = orig
         GREENWAVE._url = orig_url
+
+
+@pytest.fixture
+def mocked_greenwave_get_version():
+    """Mock global GREENWAVE.get_version to return valid version"""
+
+    orig = GREENWAVE.get_version
+    orig_url = GREENWAVE._url
+    try:
+        m = Mock(return_value="1.2.3")
+        GREENWAVE.get_version = m
+        # we have to specify URL to fake GREENWAVE.enabled property
+        GREENWAVE._url = "https://test-greenwave.example.com"
+        yield m
+    finally:
+        GREENWAVE.get_version = orig
+        GREENWAVE._url = orig_url

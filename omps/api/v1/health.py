@@ -10,7 +10,8 @@ import requests
 from requests.exceptions import RequestException
 
 from . import API
-from omps.errors import KojiError
+from omps.errors import KojiError, GreenwaveError
+from omps.greenwave import GREENWAVE
 from omps.quay import get_cnr_api_version
 from omps.koji_util import KOJI
 
@@ -60,6 +61,18 @@ def ping():
     else:
         koji_result = _ok()
 
+    # greenwave status, Greenwave is optional integration
+    greenwave_result = None
+    if GREENWAVE.enabled:
+        try:
+            GREENWAVE.get_version()
+        except GreenwaveError as e:
+            logger.error('Greenwave version check: %s', e)
+            greenwave_result = _err(e)
+            everything_ok = False
+        else:
+            greenwave_result = _ok()
+
     status_code = (
         requests.codes.ok if everything_ok
         else requests.codes.unavailable
@@ -70,7 +83,8 @@ def ping():
         "status": status_code,
         "services": {
             "koji": koji_result,
-            "quay": quay_result
+            "quay": quay_result,
+            "greenwave": greenwave_result,
         }
     }
 

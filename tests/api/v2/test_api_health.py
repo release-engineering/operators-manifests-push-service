@@ -6,7 +6,7 @@
 import requests
 import requests_mock
 
-from omps.errors import KojiError
+from omps.errors import KojiError, GreenwaveError
 
 
 PING_ENDPOINT = '/v2/health/ping'
@@ -25,6 +25,37 @@ def test_health_ping(client, mocked_koji_get_api_version, mocked_quay_version):
                 "details": "It works!"
             },
             "quay": {
+                "ok": True,
+                "details": "It works!"
+            },
+            "greenwave": None,
+        }
+    }
+
+    assert rv.status_code == requests.codes.ok
+    assert rv.get_json() == expected
+
+
+def test_health_ping_with_greenwave(
+    client, mocked_koji_get_api_version, mocked_quay_version,
+    mocked_greenwave_get_version
+):
+    """Test reporting of ok status"""
+    rv = client.get(PING_ENDPOINT)
+
+    expected = {
+        "ok": True,
+        "status": requests.codes.ok,
+        "services": {
+            "koji": {
+                "ok": True,
+                "details": "It works!"
+            },
+            "quay": {
+                "ok": True,
+                "details": "It works!"
+            },
+            "greenwave": {
                 "ok": True,
                 "details": "It works!"
             },
@@ -59,6 +90,7 @@ def test_health_ping_broken_quay(client, mocked_koji_get_api_version):
                     "https://quay.io/cnr/version"
                 )
             },
+            "greenwave": None,
         }
     }
     assert rv.status_code == requests.codes.unavailable
@@ -85,6 +117,39 @@ def test_health_ping_broken_koji(
             "quay": {
                 "ok": True,
                 "details": "It works!"
+            },
+            "greenwave": None,
+        }
+    }
+    assert rv.status_code == requests.codes.unavailable
+    assert rv.get_json() == expected
+
+
+def test_health_ping_broken_greenwave(
+    client, mocked_quay_version, mocked_koji_get_api_version,
+    mocked_greenwave_get_version
+):
+    """Test if broken koji is reported properly"""
+    e_msg = "something happened"
+    mocked_greenwave_get_version.side_effect = GreenwaveError(e_msg, {})
+
+    rv = client.get(PING_ENDPOINT)
+
+    expected = {
+        "ok": False,
+        "status": requests.codes.unavailable,
+        "services": {
+            "koji": {
+                "ok": True,
+                "details": "It works!"
+            },
+            "quay": {
+                "ok": True,
+                "details": "It works!"
+            },
+            "greenwave": {
+                "ok": False,
+                "details": e_msg
             },
         }
     }

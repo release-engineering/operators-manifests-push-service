@@ -120,5 +120,28 @@ class GreenwaveHelper:
 
             logger.info("check_build for %s: passed", nvr)
 
+    def get_version(self):
+        """Get greenwave version
+
+        :raises GreenwaveError: when failed to get version
+        :rtype: str
+        :return: Greenwave version
+        """
+        endpoint = 'api/v1.0/about'
+        if not self.enabled:
+            raise RuntimeError("Greenwave is not configured")
+
+        try:
+            response = requests.get(
+                f"{self._url}{endpoint}", timeout=self._timeout)
+            response.raise_for_status()
+            version = response.json()['version']
+        except (
+            requests.exceptions.RequestException, ValueError, KeyError
+        ) as e:
+            raise GreenwaveError(f"Failed to get Greenwave version: {e}", {})
+
+        return version
+
 
 GREENWAVE = GreenwaveHelper()
