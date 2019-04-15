@@ -134,11 +134,9 @@ def extract_zip_file_from_koji(
         after uncompressing
     """
     with NamedTemporaryFile('wb', suffix='.zip') as tmpf:
-        KOJI.download_manifest_archive(nvr, tmpf)
-        # running KOJI methods first, it has checks that should pass
-        # even before we bother greenwave
         if GREENWAVE.enabled:
             GREENWAVE.check_build(nvr)
+        KOJI.download_manifest_archive(nvr, tmpf)
         _extract_zip_file(tmpf.name, target_dir,
                           max_uncompressed_size=max_uncompressed_size)
 
