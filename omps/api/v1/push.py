@@ -15,7 +15,7 @@ from operatorcourier.api import flatten
 from operatorcourier.errors import OpCourierError
 
 from . import API
-from omps.api.common import extract_auth_token
+from omps.api.common import extract_auth_token, replace_registries
 from omps.constants import (
     ALLOWED_EXTENSIONS,
     DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE,
@@ -233,6 +233,8 @@ def _zip_flow(*, organization, repo, version, extract_manifest_func,
 
             version = get_package_version(quay_org, repo, version)
             logger.info("Using release version: %s", version)
+
+            replace_registries(quay_org, tmpdir_flatten)
 
             quay_org.push_operator_manifest(repo, version, tmpdir_flatten)
 

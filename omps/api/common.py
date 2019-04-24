@@ -5,7 +5,13 @@
 
 """ Defines shared functions for API """
 
+import logging
+import os
+
 from omps.errors import OMPSAuthorizationHeaderRequired
+
+
+logger = logging.getLogger(__name__)
 
 
 def extract_auth_token(req):
@@ -21,3 +27,25 @@ def extract_auth_token(req):
             "Request contains no 'Authorization' header")
 
     return auth_header
+
+
+def replace_registries(quay_org, dir_path):
+    """Replace registries URLs in manifests files"""
+    if not quay_org.registry_replacing_enabled:
+        return
+
+    logger.info("Replacing registries URLs for organization: %s",
+                quay_org.organization)
+
+    for root, _, files in os.walk(dir_path):
+        for fname in files:
+            fname_lower = fname.lower()
+            if fname_lower.endswith('.yml') or fname_lower.endswith('.yaml'):
+                fpath = os.path.join(root, fname)
+                with open(fpath, 'r') as f:
+                    text = f.read()
+
+                text = quay_org.replace_registries(text)
+                with open(fpath, 'w') as f:
+                    f.write(text)
+                    f.flush()

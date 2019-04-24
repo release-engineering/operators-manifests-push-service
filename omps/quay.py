@@ -138,6 +138,25 @@ class OrgManager:
                         "description": "quay.io application oauth access token",
                         "type": "string",
                     },
+                    "replace_registry": {
+                        "description": "definitions how to replace registries",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "old": {
+                                    "type": "string",
+                                    "description": "url fo registry to be "
+                                                   "replaced",
+                                },
+                                "new": {
+                                    "type": "string",
+                                    "description": "new url of registry"
+                                }
+                            },
+                            "required": ["old", "new"],
+                        }
+                    }
                 },
             },
         },
@@ -164,10 +183,12 @@ class OrgManager:
         self._timeout = config.request_timeout
         for org_name, org_conf in self._organizations.items():
             logger.info(
-                'Organization "%s" configured: public=%s, oauth_access=%s',
+                'Organization "%s" configured: public=%s, oauth_access=%s, '
+                'replacing_registry_enabled=%s',
                 org_name,
                 org_conf.get('public', False),
                 bool(org_conf.get('oauth_token')),
+                bool(org_conf.get('replace_registry'))
             )
 
     def get_org(self, organization, cnr_token):
@@ -177,7 +198,8 @@ class OrgManager:
             cnr_token,
             oauth_token=org_config.get('oauth_token'),
             public=org_config.get('public', False),
-            timeout=self._timeout
+            timeout=self._timeout,
+            replace_registry_conf=org_config.get('replace_registry')
         )
 
 
@@ -186,7 +208,7 @@ class QuayOrganization:
 
     def __init__(
         self, organization, cnr_token, oauth_token=None, public=False,
-        timeout=None
+        timeout=None, replace_registry_conf=None
     ):
         """
         :param organization: organization name
@@ -203,6 +225,7 @@ class QuayOrganization:
         self._oauth_token = oauth_token
         self._public = public
         self._timeout = timeout
+        self._replace_registry_conf = replace_registry_conf
 
     @property
     def public(self):
@@ -211,6 +234,35 @@ class QuayOrganization:
     @property
     def oauth_access(self):
         return bool(self._oauth_token)
+
+    @property
+    def organization(self):
+        return self._organization
+
+    @property
+    def registry_replacing_enabled(self):
+        return bool(self._replace_registry_conf)
+
+    def replace_registries(self, text):
+        """Returns new text with replaced registries
+
+        This implementation does just simple text replacement
+
+        :param str text: source text
+        :rtype: str
+        :return: text with replaced registries
+        """
+        if not self.registry_replacing_enabled:
+            # no rules for replacing, return original
+            return text
+
+        for conf in self._replace_registry_conf:
+            old = conf['old']
+            new = conf['new']
+            self.logger.info("Replacing registry '%s' with '%s'", old, new)
+            text = text.replace(old, new)
+
+        return text
 
     def push_operator_manifest(self, repo, version, source_dir):
         """Build, verify and push operators artifact to quay.io registry
