@@ -31,10 +31,16 @@ class ProdConfig:
     REQUEST_TIMEOUT = 28
 
     # Organization access
-    organizations = {
+    ORGANIZATIONS = {
         "public-org": {
             "public": True,
             "oauth_token" "application_access_token_goes_here"
+            "replace_registry": [
+                {
+                    "old": "quay.io",
+                    "new": "example.com",
+                },
+            ]
         }
     }
 
@@ -64,6 +70,23 @@ Organizations configuration options:
 * `public`: if `True` OMPS publish all new repositories in that organization
  (requires `oauth_token`). Default is `False` repositories are private.
 * `oauth_token`: application oauth access token from quay.io
+
+#### Replacing registries URLs in manifest files
+
+If organization have configured `replace_registry` section in the particular
+organization:
+```
+"replace_registry": [
+    {
+        "old": "quay.io",
+        "new": "example.com",
+    },
+]
+```
+all specified `old` registries will be replaced by `new` in all manifests yaml
+files for that organization. Replacement happen during pushing manifests into
+application registry.
+
 
 ### Greenwave integration
 

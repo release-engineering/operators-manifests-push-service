@@ -444,6 +444,47 @@ class TestQuayOrganization:
             with pytest.raises(QuayPackageError):
                 qo.publish_repo(repo)
 
+    @pytest.mark.parametrize('enabled', [True, False])
+    def test_registry_replacing_enabled(self, enabled):
+        """Test if property returns correct value"""
+        if enabled:
+            replace_conf = [{'old': 'reg_old', 'new': 'reg_new'}]
+        else:
+            replace_conf = None
+
+        org = 'testorg'
+
+        qo = QuayOrganization(org, TOKEN, replace_registry_conf=replace_conf)
+
+        assert qo.registry_replacing_enabled == enabled
+
+    @pytest.mark.parametrize('text,expected', [
+        (
+            'Registry reg_old will be replaced',
+            'Registry reg_new will be replaced'
+        ),
+        (
+            'Registry nope will not be replaced',
+            'Registry nope will not be replaced',
+        ),
+    ])
+    def test_replace_registries(self, text, expected):
+        """Test if registries are replaced properly"""
+        replace_conf = [{'old': 'reg_old', 'new': 'reg_new'}]
+        org = 'testorg'
+        qo = QuayOrganization(org, TOKEN, replace_registry_conf=replace_conf)
+        assert qo.replace_registries(text) == expected
+
+    def test_replace_registries_unconfigured(self):
+        """Test if replace operation returns unchanged text"""
+        org = 'testorg'
+        qo = QuayOrganization(org, TOKEN)
+        text = 'text'
+
+        res = qo.replace_registries(text)
+        assert res == text
+        assert id(res) == id(text)
+
 
 class TestOrgManager:
     """Tets for OrgManager class"""
@@ -463,6 +504,11 @@ class TestOrgManager:
                 },
                 'public_org_no_token': {
                     'public': True
+                },
+                'private_org_replacing_registries': {
+                    'replace_registry': [
+                        {'new': 'reg1', 'old': 'reg2'},
+                    ]
                 }
             }
 
@@ -474,16 +520,26 @@ class TestOrgManager:
         assert isinstance(priv_org, QuayOrganization)
         assert not priv_org.public
         assert priv_org.oauth_access
+        assert not priv_org.registry_replacing_enabled
 
         public_org = om.get_org('public_org', 'cnr_token')
         assert isinstance(public_org, QuayOrganization)
         assert public_org.public
         assert public_org.oauth_access
+        assert not public_org.registry_replacing_enabled
 
         public_org_no_token = om.get_org('public_org_no_token', 'cnr_token')
         assert isinstance(public_org_no_token, QuayOrganization)
         assert public_org_no_token.public
         assert not public_org_no_token.oauth_access
+        assert not public_org_no_token.registry_replacing_enabled
+
+        priv_org_replacing_registries = om.get_org(
+            'private_org_replacing_registries', 'cnr_token')
+        assert isinstance(priv_org_replacing_registries, QuayOrganization)
+        assert not priv_org_replacing_registries.public
+        assert not priv_org_replacing_registries.oauth_access
+        assert priv_org_replacing_registries.registry_replacing_enabled
 
     def test_getting_unconfigured_org(self):
         """Test of getting organization instance whne org is not configured in

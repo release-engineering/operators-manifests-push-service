@@ -114,6 +114,12 @@ def test_organizations():
         'myorg': {
             'public': False,
             'oauth_token': 'token',
+            'replace_registry': [
+                {
+                    'old': 'quay.io',
+                    'new': 'example.com',
+                },
+            ]
         }
     }
 
@@ -138,6 +144,22 @@ def test_organizations():
     }, {
         'organization': {
             'oauth_token': 10
+        }
+    }, {
+        'organization': {
+            'replace_registry': {}
+        }
+    }, {
+        'organization': {
+            'replace_registry': [
+                {'new': 'expected old too'}
+            ]
+        }
+    }, {
+        'organization': {
+            'replace_registry': [
+                {'old': 'expected new too'}
+            ]
         }
     }
 
