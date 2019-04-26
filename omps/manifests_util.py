@@ -49,6 +49,11 @@ class ManifestBundle:
     def package_name(self):
         """Returns defined package name from operator bundle"""
         #  op. courier do verification, this should be never empty
-        pkgs_yaml = self.bundle['data']['packages']
+        if hasattr(self.bundle, 'bundle'):
+            # New, op. courier >= 2.0.0
+            pkgs_yaml = self.bundle.bundle['data']['packages']
+        else:
+            # Old, op. courier < 2.0.0
+            pkgs_yaml = self.bundle['data']['packages']
         pkgs = yaml.safe_load(io.StringIO(pkgs_yaml))
         return pkgs[0]['packageName']
