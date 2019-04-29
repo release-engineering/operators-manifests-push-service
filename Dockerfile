@@ -23,6 +23,10 @@ RUN dnf -y install \
     && dnf -y clean all \
     && rm -rf /tmp/*
 
+RUN dnf --enablerepo=updates-testing -y update python3-operator-courier \
+    && dnf -y clean all \
+    && rm -rf /tmp/*
+
 RUN if [ "$cacert_url" != "undefined" ]; then \
         cd /etc/pki/ca-trust/source/anchors \
         && curl -O $cacert_url \
