@@ -188,7 +188,12 @@ sudo dnf install -y rpm-devel krb5-devel
 tox
 ```
 
+Additionally, you can run the following to execute tests against the
+latest *unreleased* version of Operator Courier:
 
+```bash
+tox -e 'py{36,37}-courier_master'
+```
 
 To run tests manually, you can use pytest directly:
 ```bash
