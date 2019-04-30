@@ -3,7 +3,6 @@
 # see the LICENSE file for license
 #
 
-import json
 import shutil
 import requests
 from distutils import dir_util
@@ -55,11 +54,6 @@ def test_flatten_with_nvr(omps, quay, koji, tmp_path_factory):
     koji.download_manifest(nvr, koji_data)
     courier.flatten(koji_data.as_posix(), flattened.as_posix())
     koji_bundle = courier.build_and_verify(source_dir=flattened.as_posix())
-
-    with open('quay.bundle', 'w') as fp:
-        json.dump(quay_bundle, fp, indent=4, sort_keys=True)
-    with open('koji.bundle', 'w') as fp:
-        json.dump(koji_bundle, fp, indent=4, sort_keys=True)
 
     # Note: this only confirms that OMPS used the right data from Koji,
     #       but tells nothing about the correctness of that data.
