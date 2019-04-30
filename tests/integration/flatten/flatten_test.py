@@ -53,7 +53,7 @@ def test_flatten_with_nvr(omps, quay, koji, tmp_path_factory):
     flattened = tmp_path_factory.mktemp('flattened')
     koji.download_manifest(nvr, koji_data)
     courier.flatten(koji_data.as_posix(), flattened.as_posix())
-    koji_bundle = courier.build_and_verify(source_dir=flattened.as_posix())
+    koji_bundle = courier.build_and_verify(source_dir=flattened.as_posix()).bundle
 
     # Note: this only confirms that OMPS used the right data from Koji,
     #       but tells nothing about the correctness of that data.

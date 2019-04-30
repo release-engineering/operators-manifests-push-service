@@ -89,7 +89,7 @@ def test_valid_zip_default_version(omps, quay, koji, tmp_path):
                                   test_env['test_package'], '1.0.0',
                                   authorization=None)
     koji.download_manifest(nvr, tmp_path)
-    koji_bundle = courier.build_and_verify(source_dir=tmp_path.as_posix())
+    koji_bundle = courier.build_and_verify(source_dir=tmp_path.as_posix()).bundle
 
     # Note: this only confirms that OMPS used the right data from Koji,
     #       but tells nothing about the correctness of that data.
