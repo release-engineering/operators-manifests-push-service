@@ -1,0 +1,5 @@
+#! package-manifest: deploy/chart/catalog_resources/rh-operators/marketplace.v0.0.1.clusterserviceversion.yaml
+packageName: int-test
+channels:
+- name: alpha
+  currentCSV: int-test-operator.v0.0.1

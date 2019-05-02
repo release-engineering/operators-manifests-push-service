@@ -23,19 +23,35 @@ def load_test_env():
 test_env = load_test_env()
 
 
-def bundles_equal(left, right):
-    for field in ('clusterServiceVersions', 'customResourceDefinitions', 'packages'):
-        ld = yaml.safe_load(left['data'][field])
-        rd = yaml.safe_load(right['data'][field])
+class Bundle:
+    """Wrapper to ease working with bundles.
+    """
 
-        assert isinstance(ld, list)
-        assert isinstance(rd, list)
+    FIELDS = ('clusterServiceVersions', 'customResourceDefinitions', 'packages')
 
-        for element in ld:
-            if element not in rd:
-                return False
+    def __init__(self, bundle_dict):
+        self.bundle_dict = bundle_dict
 
-    return True
+    def __eq__(self, other):
+        for field in Bundle.FIELDS:
+            sd = yaml.safe_load(self.bundle_dict['data'][field])
+            od = yaml.safe_load(other.bundle_dict['data'][field])
+
+            assert isinstance(sd, list)
+            assert isinstance(od, list)
+
+            for element in sd:
+                if element not in od:
+                    return False
+
+        return True
+
+    def __contains__(self, text):
+        for field in Bundle.FIELDS:
+            if text in self.bundle_dict['data'][field]:
+                return True
+
+        return False
 
 
 class OMPS:

@@ -6,7 +6,7 @@
 import shutil
 import requests
 from distutils import dir_util
-from tests.integration.utils import test_env, bundles_equal
+from tests.integration.utils import test_env, Bundle
 from operatorcourier import api as courier
 
 
@@ -45,19 +45,20 @@ def test_flatten_with_nvr(omps, quay, koji, tmp_path_factory):
                             test_env['test_package'], '1.0.0',
                             authorization=None)
 
-    quay_bundle = quay.get_bundle(test_env['test_namespace'],
-                                  test_env['test_package'], '1.0.0',
-                                  authorization=None)
+    quay_bundle = Bundle(quay.get_bundle(test_env['test_namespace'],
+                                         test_env['test_package'], '1.0.0',
+                                         authorization=None))
 
     koji_data = tmp_path_factory.mktemp('koji_data')
     flattened = tmp_path_factory.mktemp('flattened')
     koji.download_manifest(nvr, koji_data)
     courier.flatten(koji_data.as_posix(), flattened.as_posix())
-    koji_bundle = courier.build_and_verify(source_dir=flattened.as_posix()).bundle
+    koji_bundle = Bundle(
+        courier.build_and_verify(source_dir=flattened.as_posix()).bundle)
 
     # Note: this only confirms that OMPS used the right data from Koji,
     #       but tells nothing about the correctness of that data.
-    assert bundles_equal(quay_bundle, koji_bundle)
+    assert quay_bundle == koji_bundle
 
 
 def test_flatten_with_zip(omps, quay, tmp_path):
