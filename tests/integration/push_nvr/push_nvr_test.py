@@ -5,6 +5,7 @@
 
 import shutil
 import requests
+import pytest
 from operatorcourier import api as courier
 from tests.integration.utils import test_env, Bundle
 
@@ -188,3 +189,61 @@ def test_increment_version(omps, quay, tmp_path):
     assert quay.get_release(test_env['test_namespace'],
                             test_env['test_package'], next_version,
                             authorization=None)
+
+
+@pytest.mark.skipif(not test_env.get("greenwave"), reason="Greenwave is not configured")
+@pytest.mark.parametrize(
+    "build,policies_satisfied,summary",
+    [
+        ("greenwave_passed", True, "no tests are required"),
+        ("greenwave_failed", False, "1 of 1 required test results missing"),
+    ],
+    ids=["passed", "failed"]
+)
+def test_greenwave(omps, quay, tmp_path, build, policies_satisfied, summary):
+    """
+    When fetching an NVR from Koji,
+    and Greenwave is configured,
+    then the push succeeds or fails depending
+        on the Greenwave policies being satisfied or not.
+    """
+    nvr = test_env["koji_builds"][build]
+    version = "1.0.0"
+
+    quay.delete(test_env["test_namespace"], test_env["test_package"])
+    response = requests.post(
+        test_env["greenwave"]["decision_url"],
+        json={
+            "decision_context": test_env["greenwave"]["decision_context"],
+            "product_version": test_env["greenwave"]["product_version"],
+            "subject_type": "koji_build",
+            "subject_identifier": nvr,
+        },
+    )
+    assert response.status_code == requests.codes.ok
+    assert response.json()["policies_satisfied"] == policies_satisfied
+    assert response.json()["summary"] == summary
+
+    response = omps.fetch_nvr(
+        organization=test_env['test_namespace'],
+        repo=test_env['test_package'],
+        nvr=nvr
+    )
+
+    if policies_satisfied:
+        assert response.status_code == requests.codes.ok
+        assert quay.get_release(
+            test_env["test_namespace"],
+            test_env["test_package"],
+            version,
+            authorization=None,
+        )
+    else:
+        assert response.status_code == requests.codes.bad_request
+        with pytest.raises(requests.exceptions.HTTPError):
+            quay.get_release(
+                test_env["test_namespace"],
+                test_env["test_package"],
+                version,
+                authorization=None,
+            )
