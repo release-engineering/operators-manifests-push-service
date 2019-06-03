@@ -53,25 +53,10 @@ class KojiUtil:
                     target_fd.write(chunk)
         target_fd.flush()
 
-    def download_manifest_archive(self, nvr, target_fd):
-        """Downloads operators
-
-        :param str koji_url: url for koji connection
-        :param str nvr: koji image nvr
-        :param FileObject target_fd: output file object (opened in binary mode)
-        """
-        metadata = self.session.getBuild(nvr)
-        if metadata is None:
-            raise KojiNVRBuildNotFound("NVR not found: {}".format(nvr))
-
-        try:
-            key = constants.KOJI_OPERATOR_MANIFESTS_ARCHIVE_KEY
-            filename = metadata['extra'][key]
-        except KeyError:
-            raise KojiNotAnOperatorImage("Not an operator image: {}".format(nvr))
-
+    def _get_url_manifest_from_logs(self, build_info, nvr, filename):
+        """Returns URL for manifest stored in logs (old way, deprecated)"""
         # OSBS stores manifests archive in zip files (will be moved in future)
-        logs = self.session.getBuildLogs(metadata['build_id'])
+        logs = self.session.getBuildLogs(build_info['build_id'])
         path = None
         for logfile in logs:
             if logfile['name'] == filename:
@@ -84,6 +69,40 @@ class KojiUtil:
                 "{}".format(filename, nvr))
 
         url = self._kojiroot_url + path
+        return url
+
+    def _get_url_manifest_btype(self, build_info, filename):
+        """Returns URL for manifest stored in dedicated operator-manifests
+        build type"""
+        pi = koji.PathInfo(self._kojiroot_url)
+        url = pi.build(build_info) + f'/files/operator-manifests/{filename}'
+        return url
+
+    def download_manifest_archive(self, nvr, target_fd):
+        """Downloads operators
+
+        :param str koji_url: url for koji connection
+        :param str nvr: koji image nvr
+        :param FileObject target_fd: output file object (opened in binary mode)
+        """
+        metadata = self.session.getBuild(nvr)
+        if metadata is None:
+            raise KojiNVRBuildNotFound("NVR not found: {}".format(nvr))
+
+        try:
+            filename = metadata['extra']['typeinfo']['operator-manifests']['archive']
+        except KeyError:
+            # keep BW compatibility with older builds
+            try:
+                key = constants.KOJI_OPERATOR_MANIFESTS_ARCHIVE_KEY
+                filename = metadata['extra'][key]
+            except KeyError:
+                raise KojiNotAnOperatorImage("Not an operator image: {}".format(nvr))
+            else:
+                url = self._get_url_manifest_from_logs(metadata, nvr, filename)
+        else:
+            url = self._get_url_manifest_btype(metadata, filename)
+
         self._file_download(url, target_fd)
 
     def get_api_version(self):
