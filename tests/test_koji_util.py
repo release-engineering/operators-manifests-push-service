@@ -21,12 +21,33 @@ class TestKojiUtil:
     """Tests for KojiUtil class"""
 
     FILENAME = 'testfile.zip'
-    FILEPATH = 'path/to/archive.zip'
+    PKGNAME = "test_package"
+    VERSION = "1.0"
+    RELEASE = "1"
+    FILEPATH_ARCHIVE_IN_LOGS = 'path/to/archive.zip'
+
+    ARCHIVE_KOJI_PATH = (
+        f'/packages/{PKGNAME}/{VERSION}/{RELEASE}/'
+        f'files/operator-manifests/{FILENAME}'
+    )
+    META_ARCHIVE_IN_LOGS = {
+        "extra": {'operator_manifests_archive': FILENAME},
+        "build_id": 12345,
+    }
 
     def _mock_getBuild(self, mocked_koji, rdata=None):
         if rdata is None:
             meta = {
-                "extra": {'operator_manifests_archive': self.FILENAME},
+                "name": self.PKGNAME,
+                "version": self.VERSION,
+                "release": self.RELEASE,
+                "extra": {
+                    'typeinfo': {
+                        'operator-manifests': {
+                            'archive': self.FILENAME
+                        },
+                    },
+                },
                 "build_id": 12345,
             }
         else:
@@ -38,7 +59,7 @@ class TestKojiUtil:
             logs = [
                 {
                     'name': self.FILENAME,
-                    "path": self.FILEPATH,
+                    "path": self.FILEPATH_ARCHIVE_IN_LOGS,
                 },
             ]
         else:
@@ -64,9 +85,9 @@ class TestKojiUtil:
             mocked_koji.download_manifest_archive('test', None)
 
     def test_download_manifest_archive_no_file(self, mocked_koji):
-        """Test if proper exception is raised when build miss the archive
-        file"""
-        self._mock_getBuild(mocked_koji)
+        """(Deprecated) Test if proper exception is raised when build miss the
+        archive file"""
+        self._mock_getBuild(mocked_koji, rdata=self.META_ARCHIVE_IN_LOGS)
         logs = [
             {
                 'name': 'something_else',
@@ -78,29 +99,57 @@ class TestKojiUtil:
         with pytest.raises(KojiManifestsArchiveNotFound):
             mocked_koji.download_manifest_archive('test', None)
 
-    def test_download_manifest_archive_download_error(self, mocked_koji):
-        """Test if proper exception is raised when download fails"""
-        self._mock_getBuild(mocked_koji)
+    def test_download_manifest_archive_download_error_logs(self, mocked_koji):
+        """(Deprecated) Test if proper exception is raised when download fails"""
+        self._mock_getBuild(mocked_koji, rdata=self.META_ARCHIVE_IN_LOGS)
         self._mock_getBuildLogs(mocked_koji)
 
         with requests_mock.Mocker() as m:
             m.get(
-                mocked_koji._kojiroot_url + self.FILEPATH,
+                mocked_koji._kojiroot_url + self.FILEPATH_ARCHIVE_IN_LOGS,
                 status_code=requests.codes.not_found)
             with pytest.raises(KojiError):
                 with tempfile.NamedTemporaryFile() as target_f:
                     mocked_koji.download_manifest_archive('test', target_f)
 
-    def test_download_manifest_archive(self, mocked_koji):
-        """Positive test, everything should work now"""
+    def test_download_manifest_archive_download_error(self, mocked_koji):
+        """Test if proper exception is raised when download fails"""
         self._mock_getBuild(mocked_koji)
+
+        with requests_mock.Mocker() as m:
+            m.get(
+                mocked_koji._kojiroot_url + self.ARCHIVE_KOJI_PATH,
+                status_code=requests.codes.not_found)
+            with pytest.raises(KojiError):
+                with tempfile.NamedTemporaryFile() as target_f:
+                    mocked_koji.download_manifest_archive('test', target_f)
+
+    def test_download_manifest_archive_logs(self, mocked_koji):
+        """(Deprecated) Positive test, archive stored in logs everything
+        should work"""
+        self._mock_getBuild(mocked_koji, rdata=self.META_ARCHIVE_IN_LOGS)
         self._mock_getBuildLogs(mocked_koji)
 
         data = b"I'm a zip archive!"
 
         with requests_mock.Mocker() as m:
             m.get(
-                mocked_koji._kojiroot_url + self.FILEPATH,
+                mocked_koji._kojiroot_url + self.FILEPATH_ARCHIVE_IN_LOGS,
+                content=data)
+            with tempfile.NamedTemporaryFile() as target_f:
+                mocked_koji.download_manifest_archive('test', target_f)
+                target_f.seek(0)
+                assert target_f.read() == data
+
+    def test_download_manifest_archive(self, mocked_koji):
+        """Positive test, archive stored in dedicated build type"""
+        self._mock_getBuild(mocked_koji)
+
+        data = b"I'm a zip archive!"
+
+        with requests_mock.Mocker() as m:
+            m.get(
+                mocked_koji._kojiroot_url + self.ARCHIVE_KOJI_PATH,
                 content=data)
             with tempfile.NamedTemporaryFile() as target_f:
                 mocked_koji.download_manifest_archive('test', target_f)
