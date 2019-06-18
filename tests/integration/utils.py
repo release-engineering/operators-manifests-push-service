@@ -401,7 +401,7 @@ class Koji:
     """
     def __init__(self, kojihub, kojiroot):
         self._kojihub = kojihub
-        self._kojiroot = kojiroot
+        self._pathinfo = koji.PathInfo(kojiroot)
         self._session = koji.ClientSession(self._kojihub)
 
     def download_manifest(self, nvr, tmpdir):
@@ -417,11 +417,20 @@ class Koji:
 
         Raises: HTTPError, in case the downloading the archive failed.
         """
-        for log in self._session.getBuildLogs(nvr):
+        build = self._session.getBuild(nvr)
+        # TODO(csomh): this is the 'old' way of storing the manifests. Remove it
+        # once OMPS drops support for it.
+        for log in self._session.getBuildLogs(build):
             if log['name'] == 'operator_manifests.zip':
-                path = log['path']
+                file_url = f"{self._pathinfo.topdir}/{log['path']}"
+                break
+        else:
+            btype = "operator-manifests"
+            archives = self._session.listArchives(buildID=build["id"], type=btype)
+            if archives:
+                typedir = self._pathinfo.typedir(build, btype)
+                file_url = f"{typedir}/{archives[0]['filename']}"
 
-        file_url = '{root}/{path}'.format(root=self._kojiroot, path=path)
         r = requests.get(file_url)
         r.raise_for_status()
 
