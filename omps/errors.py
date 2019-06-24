@@ -9,7 +9,6 @@ from flask import jsonify
 from werkzeug.exceptions import HTTPException
 from operatorcourier.errors import (
     OpCourierBadYaml,
-    OpCourierBadArtifact,
     OpCourierBadBundle,
     OpCourierQuayErrorResponse
 )
@@ -181,7 +180,7 @@ def raise_for_courier_exception(e, new_msg=None):
 
     if isinstance(e, OpCourierBadBundle):
         raise PackageValidationError(msg, e.validation_info)
-    elif isinstance(e, (OpCourierBadYaml, OpCourierBadArtifact)):
+    elif isinstance(e, OpCourierBadYaml):
         raise PackageValidationError(msg)
     elif isinstance(e, OpCourierQuayErrorResponse):
         if e.code == 403:
