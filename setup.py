@@ -62,7 +62,7 @@ setup(
         'koji',
         'PyYAML',
         'requests',
-        'operator-courier>=1.3.0',
+        'operator-courier>=2.1.1',
     ],
     extras_require={
         'test': [

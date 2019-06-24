@@ -16,7 +16,6 @@ from operatorcourier.errors import (
     OpCourierQuayError,
     OpCourierQuayCommunicationError,
     OpCourierValueError,
-    OpCourierBadArtifact,
     OpCourierBadYaml
 )
 
@@ -151,7 +150,6 @@ class TestQuayOrganization:
                                      op_courier_push_raising)
 
     @pytest.mark.parametrize('courier_exception', [
-        OpCourierBadArtifact('Bad artifact.'),
         OpCourierBadYaml('Bad yaml.')
     ])
     def test_courier_invalid_files_error(self, courier_exception,
