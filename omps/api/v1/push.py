@@ -25,7 +25,7 @@ from omps.errors import (
     OMPSUploadedFileError,
     OMPSExpectedFileError,
     QuayPackageNotFound,
-    QuayCourierError,
+    raise_for_courier_exception,
 )
 from omps.greenwave import GREENWAVE
 from omps.koji_util import KOJI
@@ -178,9 +178,7 @@ def _flatten_manifest_structure(source_dir, dest_dir):
     try:
         flatten(source_dir, dest_dir)
     except OpCourierError as e:
-        raise QuayCourierError(
-            'Failed to flatten manifest directory: {}'.format(e)
-        )
+        raise_for_courier_exception(e)
 
     if not os.listdir(dest_dir):
         # if dest dir is empty, it means that flatten did noop and source dir
