@@ -172,7 +172,7 @@ class TestKojiUtil:
          .and_raise(Exception(msg))
          )
 
-        with pytest.raises(KojiError) as ke:
+        with pytest.raises(KojiError) as exc_info:
             mocked_koji.get_api_version()
 
-        assert msg in str(ke)
+        assert msg in str(exc_info.value)
