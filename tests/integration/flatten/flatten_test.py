@@ -118,9 +118,8 @@ def test_flatten_fails(omps, quay, tmp_path_factory):
     response = omps.upload(organization=test_env['test_namespace'],
                            repo=test_env['test_package'], archive=archive)
 
-    assert response.status_code == requests.codes.server_error
-    # TODO(csomh): Check the message in response.json() once Operator Courier
-    #     released this change:
-    #     https://github.com/operator-framework/operator-courier/pull/92
+    assert response.status_code == requests.codes.bad_request
+    assert response.json()["error"] == "PackageValidationError"
+    assert "Only 1 package is expected" in response.json()["message"]
     assert not quay.get_releases(test_env['test_namespace'],
                                  test_env['test_package'])

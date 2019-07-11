@@ -20,9 +20,9 @@ def test_invalid_zip(omps):
     response = omps.fetch_nvr(organization=test_env['test_namespace'],
                               repo=test_env['test_package'], nvr=nvr)
 
-    assert response.status_code == requests.codes.server_error
-    assert response.json()['error'] == 'QuayCourierError'
-    assert 'Failed to flatten manifest directory' in response.json()['message']
+    assert response.status_code == requests.codes.bad_request
+    assert response.json()["error"] == "PackageValidationError"
+    assert "no valid CSV file is found" in response.json()["message"]
 
 
 def test_not_an_operator(omps):
