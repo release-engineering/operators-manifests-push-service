@@ -125,10 +125,10 @@ def test_push_koji_nvr(
     mocked_greenwave.assert_called_once_with(endpoint_push_koji.nvr)
 
 
-def test_push_no_package_name(
+def test_push_invalid_manifests(
         client, endpoint_push_koji, mocked_quay_io, mocked_op_courier_push,
         auth_header, mocked_bad_koji_archive_download, mocked_greenwave):
-    """Test REST API for failing to push operators with no packageName """
+    """Test REST API for failing to push operators with bad manifests """
     rv = client.post(
         endpoint_push_koji.url_path,
         headers=auth_header
@@ -136,7 +136,10 @@ def test_push_no_package_name(
     assert rv.status_code == requests.codes.bad_request, rv.get_json()
     rv_json = rv.get_json()
     assert rv_json['error'] == 'PackageValidationError'
-    assert rv_json['message'] == 'Could not find packageName in manifests.'
+    assert rv_json['message'] in (
+        'Could not find packageName in manifests.',
+        'Failed to parse yaml file /not_yaml.yaml',
+    )
 
 
 def test_push_koji_unauthorized(client, endpoint_push_koji):
