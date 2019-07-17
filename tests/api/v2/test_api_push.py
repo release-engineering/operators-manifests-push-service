@@ -107,7 +107,7 @@ def test_push_zipfile_encrypted(
 def test_push_koji_nvr(
         client, endpoint_push_koji, mocked_quay_io, mocked_op_courier_push,
         auth_header, mocked_koji_archive_download, mocked_greenwave):
-    """Test REST API for pushing operators form koji by NVR"""
+    """Test REST API for pushing operators from koji by NVR"""
     archive = mocked_koji_archive_download
     rv = client.post(
         endpoint_push_koji.url_path,
@@ -123,6 +123,20 @@ def test_push_koji_nvr(
     }
     assert rv.get_json() == expected
     mocked_greenwave.assert_called_once_with(endpoint_push_koji.nvr)
+
+
+def test_push_no_package_name(
+        client, endpoint_push_koji, mocked_quay_io, mocked_op_courier_push,
+        auth_header, mocked_bad_koji_archive_download, mocked_greenwave):
+    """Test REST API for failing to push operators with no packageName """
+    rv = client.post(
+        endpoint_push_koji.url_path,
+        headers=auth_header
+    )
+    assert rv.status_code == requests.codes.bad_request, rv.get_json()
+    rv_json = rv.get_json()
+    assert rv_json['error'] == 'PackageValidationError'
+    assert rv_json['message'] == 'Could not find packageName in manifests.'
 
 
 def test_push_koji_unauthorized(client, endpoint_push_koji):

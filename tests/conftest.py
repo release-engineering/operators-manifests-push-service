@@ -59,13 +59,25 @@ def datadir(tmpdir):
     ('etcd_op_nested', 'etcd'),
 ])
 def valid_manifest_dir(request, datadir):
-    """Return metadata and path to manifest"""
+    """Return metadata and path to valid manifest"""
     manifest_dir_name, pkg_name = request.param
     path = os.path.join(datadir, manifest_dir_name)
     return ManifestDirMeta(
         path=path,
         pkg_name=pkg_name,
         valid=True
+    )
+
+
+@pytest.fixture
+def invalid_manifest_dir(datadir):
+    """Return metadata and path to invalid manifest"""
+    manifest_dir_name, pkg_name = 'invalid', 'invalid'
+    path = os.path.join(datadir, manifest_dir_name)
+    return ManifestDirMeta(
+        path=path,
+        pkg_name=pkg_name,
+        valid=False
     )
 
 
@@ -86,12 +98,11 @@ def valid_manifest_flatten_dir(valid_manifest_dir):
         )
 
 
-@pytest.fixture
-def valid_manifests_archive(datadir, tmpdir, valid_manifest_dir):
+def _manifests_archive(datadir, tmpdir, manifest_dir):
     """Construct valid operator manifest data zip archive"""
     path = os.path.join(tmpdir, 'test_archive.zip')
 
-    start = valid_manifest_dir.path
+    start = manifest_dir.path
     res_files = []
 
     with zipfile.ZipFile(path, 'w') as zip_archive:
@@ -105,8 +116,20 @@ def valid_manifests_archive(datadir, tmpdir, valid_manifest_dir):
     return ArchiveMeta(
         path=path,
         files=sorted(res_files),
-        pkg_name=valid_manifest_dir.pkg_name,
-        valid=valid_manifest_dir.valid)
+        pkg_name=manifest_dir.pkg_name,
+        valid=manifest_dir.valid)
+
+
+@pytest.fixture
+def valid_manifests_archive(datadir, tmpdir, valid_manifest_dir):
+    """Construct valid operator manifest data zip archive"""
+    return _manifests_archive(datadir, tmpdir, valid_manifest_dir)
+
+
+@pytest.fixture
+def invalid_manifests_archive(datadir, tmpdir, invalid_manifest_dir):
+    """Construct invalid operator manifest data zip archive"""
+    return _manifests_archive(datadir, tmpdir, invalid_manifest_dir)
 
 
 @pytest.fixture
@@ -181,20 +204,30 @@ def op_courier_push_raising():
     return CourierPushCM
 
 
-@pytest.fixture
-def mocked_koji_archive_download(valid_manifests_archive):
-    """Mock KojiUtil.koji_download_manifest_archive to return valid archive"""
+def _koji_archive_download(manifests_archive):
     def fake_download(nvr, target_fd):
-        with open(valid_manifests_archive.path, 'rb') as zf:
+        with open(manifests_archive.path, 'rb') as zf:
             target_fd.write(zf.read())
             target_fd.flush()
 
     orig = KOJI.download_manifest_archive
     try:
         KOJI.download_manifest_archive = fake_download
-        yield valid_manifests_archive
+        yield manifests_archive
     finally:
         KOJI.download_manifest_archive = orig
+
+
+@pytest.fixture
+def mocked_koji_archive_download(valid_manifests_archive):
+    """Mock KojiUtil.koji_download_manifest_archive to return valid archive"""
+    yield from _koji_archive_download(valid_manifests_archive)
+
+
+@pytest.fixture
+def mocked_bad_koji_archive_download(invalid_manifests_archive):
+    """Mock KojiUtil.koji_download_manifest_archive to return invalid archive"""
+    yield from _koji_archive_download(invalid_manifests_archive)
 
 
 @pytest.fixture
