@@ -167,15 +167,20 @@ def get_package_version(quay_org, repo, version=None):
 
 
 def _get_reponame_from_manifests(source_dir):
-    for filename in os.listdir(source_dir):
+    for filename in sorted(os.listdir(source_dir)):
         filename = os.path.join(source_dir, filename)
         if filename.endswith('.yaml') or filename.endswith('.yml'):
-            with open(filename, 'r') as f:
-                contents = safe_load(f.read())
-                if 'packageName' in contents:
-                    name = contents['packageName']
-                    logger.info("Found packageName %r in %r", name, filename)
-                    return name
+            try:
+                with open(filename, 'r') as f:
+                    contents = safe_load(f.read())
+                    if 'packageName' in contents:
+                        name = contents['packageName']
+                        logger.info("Found packageName %s in %s", name, filename)
+                        return name
+            except Exception:
+                message = "Failed to parse yaml file %s" % filename[len(source_dir):]
+                logger.exception(message)
+                raise PackageValidationError(message)
 
     raise PackageValidationError("Could not find packageName in manifests.")
 

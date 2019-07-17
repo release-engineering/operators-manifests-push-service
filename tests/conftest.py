@@ -69,10 +69,13 @@ def valid_manifest_dir(request, datadir):
     )
 
 
-@pytest.fixture
-def invalid_manifest_dir(datadir):
+@pytest.fixture(params=[
+    ('no_package_name', 'no_package_name'),
+    ('not_yaml', 'not_yaml'),
+])
+def invalid_manifest_dir(request, datadir):
     """Return metadata and path to invalid manifest"""
-    manifest_dir_name, pkg_name = 'invalid', 'invalid'
+    manifest_dir_name, pkg_name = request.param
     path = os.path.join(datadir, manifest_dir_name)
     return ManifestDirMeta(
         path=path,
