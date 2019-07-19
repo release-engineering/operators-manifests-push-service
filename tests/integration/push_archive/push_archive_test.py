@@ -41,6 +41,43 @@ def test_initial_upload(omps, quay, tmp_path):
     assert releases[0]['release'] == '1.0.0'
 
 
+def test_nested_manifest(omps, quay, tmp_path):
+    """
+    When the manifest data in a zip file has a nested structure,
+    and the manifest data is pushed to Quay using the ZIP-file endpoint,
+    then pushing the data is successful.
+    """
+    version = '1.0.0'
+    quay.delete(test_env['test_namespace'], test_env['test_package'])
+    archive = shutil.make_archive(tmp_path / 'archive', 'zip',
+                                  'tests/integration/artifacts/nested/')
+
+    response = omps.upload(organization=test_env['test_namespace'],
+                           repo=test_env['test_package'], archive=archive)
+
+    assert response.status_code == requests.codes.ok
+    assert response.json() == {
+        'extracted_files': [
+            '0.6.1/int-testcluster.crd.yaml',
+            '0.6.1/int-testoperator.clusterserviceversion.yaml',
+            '0.9.0/int-testbackup.crd.yaml',
+            '0.9.0/int-testcluster.crd.yaml',
+            '0.9.0/int-testoperator.v0.9.0.clusterserviceversion.yaml',
+            '0.9.0/int-testrestore.crd.yaml',
+            '0.9.2/int-testbackup.crd.yaml',
+            '0.9.2/int-testoperator.v0.9.2.clusterserviceversion.yaml',
+            'int-test.package.yaml'
+        ],
+        'organization': test_env['test_namespace'],
+        'repo': test_env['test_package'],
+        'version': version,
+    }
+    assert quay.get_release(test_env['test_namespace'],
+                            test_env['test_package'],
+                            version,
+                            authorization=None)
+
+
 def test_upload_with_version(omps, quay, tmp_path):
     """
     When specifying the version for an upload,
