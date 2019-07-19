@@ -173,57 +173,6 @@ spec:
                       fieldPath: metadata.name
   customresourcedefinitions:
     owned:
-    - name: etcdclusters.etcd.database.coreos.com
-      version: v1beta2
-      kind: EtcdCluster
-      displayName: etcd Cluster
-      description: Represents a cluster of etcd nodes.
-      resources:
-        - kind: Service
-          version: v1
-        - kind: Pod
-          version: v1
-      specDescriptors:
-        - description: The desired number of member Pods for the etcd cluster.
-          displayName: Size
-          path: size
-          x-descriptors:
-            - 'urn:alm:descriptor:com.tectonic.ui:podCount'
-        - description: Limits describes the minimum/maximum amount of compute resources required/allowed
-          displayName: Resource Requirements
-          path: pod.resources
-          x-descriptors:
-            - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
-      statusDescriptors:
-        - description: The status of each of the member Pods for the etcd cluster.
-          displayName: Member Status
-          path: members
-          x-descriptors:
-            - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-        - description: The service at which the running etcd cluster can be accessed.
-          displayName: Service
-          path: serviceName
-          x-descriptors:
-            - 'urn:alm:descriptor:io.kubernetes:Service'
-        - description: The current size of the etcd cluster.
-          displayName: Cluster Size
-          path: size
-        - description: The current version of the etcd cluster.
-          displayName: Current Version
-          path: currentVersion
-        - description: 'The target version of the etcd cluster, after upgrading.'
-          displayName: Target Version
-          path: targetVersion
-        - description: The current status of the etcd cluster.
-          displayName: Status
-          path: phase
-          x-descriptors:
-            - 'urn:alm:descriptor:io.kubernetes.phase'
-        - description: Explanation for the current status of the cluster.
-          displayName: Status Details
-          path: reason
-          x-descriptors:
-            - 'urn:alm:descriptor:io.kubernetes.phase:reason'
     - name: etcdbackups.etcd.database.coreos.com
       version: v1beta2
       kind: EtcdBackup
@@ -252,39 +201,6 @@ spec:
           x-descriptors:
             - 'urn:alm:descriptor:text'
         - description: Indicates the reason for any backup related failures.
-          displayName: Reason
-          path: reason
-          x-descriptors:
-            - 'urn:alm:descriptor:io.kubernetes.phase:reason'
-    - name: etcdrestores.etcd.database.coreos.com
-      version: v1beta2
-      kind: EtcdRestore
-      displayName: etcd Restore
-      description: Represents the intent to restore an etcd cluster from a backup.
-      specDescriptors:
-        - description: References the EtcdCluster which should be restored,
-          displayName: etcd Cluster
-          path: etcdCluster.name
-          x-descriptors:
-            - 'urn:alm:descriptor:io.kubernetes:EtcdCluster'
-            - 'urn:alm:descriptor:text'
-        - description: The full AWS S3 path where the backup is saved.
-          displayName: S3 Path
-          path: s3.path
-          x-descriptors:
-            - 'urn:alm:descriptor:aws:s3:path'
-        - description: The name of the secret object that stores the AWS credential and config files.
-          displayName: AWS Secret
-          path: s3.awsSecret
-          x-descriptors:
-            - 'urn:alm:descriptor:io.kubernetes:Secret'
-      statusDescriptors:
-        - description: Indicates if the restore was successful.
-          displayName: Succeeded
-          path: succeeded
-          x-descriptors:
-            - 'urn:alm:descriptor:text'
-        - description: Indicates the reason for any restore related failures.
           displayName: Reason
           path: reason
           x-descriptors:
