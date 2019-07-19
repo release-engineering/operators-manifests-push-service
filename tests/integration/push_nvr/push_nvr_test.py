@@ -127,6 +127,54 @@ def test_valid_zip_defined_version(omps, quay):
                             authorization=None)
 
 
+def test_nested_manifest(omps, quay, koji, tmp_path):
+    """
+    When the manifest data of an operator image has a nested structure,
+    and the manifest data is pushed to Quay using the NVR endpoint,
+    then pushing the data is successful.
+    """
+    version = '1.0.0'
+    nvr = test_env['koji_builds']['nested_manifest']
+    quay.delete(test_env['test_namespace'], test_env['test_package'])
+
+    response = omps.fetch_nvr(organization=test_env['test_namespace'],
+                              repo=test_env['test_package'], nvr=nvr)
+
+    assert response.status_code == requests.codes.ok
+    assert response.json() == {
+        'extracted_files': [
+            '0.6.1/int-testcluster.crd.yaml',
+            '0.6.1/int-testoperator.clusterserviceversion.yaml',
+            '0.9.0/int-testbackup.crd.yaml',
+            '0.9.0/int-testcluster.crd.yaml',
+            '0.9.0/int-testoperator.v0.9.0.clusterserviceversion.yaml',
+            '0.9.0/int-testrestore.crd.yaml',
+            '0.9.2/int-testbackup.crd.yaml',
+            '0.9.2/int-testoperator.v0.9.2.clusterserviceversion.yaml',
+            'int-test.package.yaml'
+        ],
+        'nvr': nvr,
+        'organization': test_env['test_namespace'],
+        'repo': test_env['test_package'],
+        'version': version,
+    }
+    assert quay.get_release(test_env['test_namespace'],
+                            test_env['test_package'], '1.0.0',
+                            authorization=None)
+
+    quay_bundle = Bundle(quay.get_bundle(test_env['test_namespace'],
+                                         test_env['test_package'], '1.0.0',
+                                         authorization=None))
+
+    koji.download_manifest(nvr, tmp_path)
+    koji_bundle = Bundle(
+        courier.build_and_verify(source_dir=tmp_path.as_posix()).bundle)
+
+    # Note: this only confirms that OMPS used the right data from Koji,
+    #       but tells nothing about the correctness of that data.
+    assert quay_bundle == koji_bundle
+
+
 def test_version_exists(omps, quay, tmp_path):
     """
     When fetching an NVR from Koji,
