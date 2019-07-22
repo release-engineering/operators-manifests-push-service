@@ -23,17 +23,41 @@ def load_test_env():
 test_env = load_test_env()
 
 
-class Bundle:
-    """Wrapper to ease working with bundles.
-    """
+def make_bundle(bundle):
+    """Make a bundle to be used by the tests.
 
+    Args:
+        bundle: either a bundle as a dictionary OR
+                a nested bundle as concatenated files OR
+                a path to a directory of a nested bundle.
+    Returns:
+        A FlatBundle or a string, which has the files of a nested bundle
+        concatenated.
+
+    Raises:
+        AssertionError if the argument is of a type that is not handled.
+    """
+    if isinstance(bundle, dict):
+        return FlatBundle(bundle)
+    elif isinstance(bundle, str):
+        b = bundle
+        if os.path.isdir(bundle):
+            b = concatenated_files(bundle)
+        return b
+    else:
+        assert False
+
+
+class FlatBundle():
+    """Wrapper to ease working with flat-bundles.
+    """
     FIELDS = ('clusterServiceVersions', 'customResourceDefinitions', 'packages')
 
     def __init__(self, bundle_dict):
         self.bundle_dict = bundle_dict
 
     def __eq__(self, other):
-        for field in Bundle.FIELDS:
+        for field in FlatBundle.FIELDS:
             sd = yaml.safe_load(self.bundle_dict['data'][field])
             od = yaml.safe_load(other.bundle_dict['data'][field])
 
@@ -47,7 +71,7 @@ class Bundle:
         return True
 
     def __contains__(self, text):
-        for field in Bundle.FIELDS:
+        for field in FlatBundle.FIELDS:
             if text in self.bundle_dict['data'][field]:
                 return True
 
@@ -293,9 +317,15 @@ class QuayAppRegistry:
             with tarfile.open(archive, 'r:gz') as tar:
                 tar.extractall(path=tempdir)
 
-            bundle_file = '{tempdir}/bundle.yaml'.format(tempdir=tempdir)
-            with open(bundle_file, 'r') as f:
-                bundle = yaml.safe_load(f)
+            os.remove(archive)
+            bundle_file = f"{tempdir}/bundle.yaml"
+            if os.path.isfile(bundle_file):
+                with open(bundle_file, 'r') as f:
+                    bundle = yaml.safe_load(f)
+            else:
+                # Assume that this is a nested bundle. Concatenate the sorted
+                # files in a single string.
+                bundle = concatenated_files(tempdir)
 
         return bundle
 
@@ -442,3 +472,26 @@ class Koji:
             z.extractall(tmpdir)
 
         os.remove(archive)
+
+
+def concatenated_files(directory):
+    """Takes a directory and recursively concatenates all the files in it.
+
+    Files are sorted before concatenation.
+
+    Args:
+        directory: path to the directory to be parsed
+
+    Returns:
+        String with the content of all the files found, concatenated.
+    """
+    ret = ''
+    files = []
+    for dirpath, dirnames, filenames in os.walk(directory):
+        for filename in filenames:
+            files.append(os.path.join(dirpath, filename))
+    files.sort()
+    for file in files:
+        with open(file, 'r') as fp:
+            ret += fp.read()
+    return ret

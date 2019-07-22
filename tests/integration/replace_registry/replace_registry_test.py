@@ -8,7 +8,7 @@ import shutil
 import pytest
 from distutils import dir_util
 from itertools import cycle
-from tests.integration.utils import test_env, Bundle
+from tests.integration.utils import test_env, make_bundle
 
 
 def is_yaml_file(path):
@@ -72,7 +72,7 @@ def test_replace_during_nvr_push(omps, quay, koji, tmp_path):
     )
     response.raise_for_status()
 
-    quay_bundle = Bundle(
+    quay_bundle = make_bundle(
         quay.get_bundle(
             test_env["test_namespace"],
             test_env["test_package"],
@@ -149,7 +149,7 @@ def test_replace_during_archive_push(omps, quay, tmp_path_factory, manifest_path
     )
     response.raise_for_status()
 
-    quay_bundle = Bundle(
+    quay_bundle = make_bundle(
         quay.get_bundle(
             test_env["test_namespace"],
             test_env["test_package"],
