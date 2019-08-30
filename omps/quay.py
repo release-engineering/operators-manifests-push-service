@@ -259,8 +259,9 @@ class QuayOrganization:
         for conf in self._replace_registry_conf:
             old = conf['old']
             new = conf['new']
-            self.logger.info("Replacing registry '%s' with '%s'", old, new)
-            text = text.replace(old, new)
+            if old in text:
+                self.logger.info("Replacing registry '%s' with '%s'", old, new)
+                text = text.replace(old, new)
 
         return text
 
