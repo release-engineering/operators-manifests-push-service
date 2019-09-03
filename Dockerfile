@@ -2,6 +2,7 @@ FROM fedora:30
 LABEL \
     name="Operators Manifests Push Service" \
     vendor="Red Hat, Inc" \
+    maintainer="Martin Basti <mbasti@redhat.com>" \
     license="GPLv3"
 
 # The caller can optionally provide a cacert url
