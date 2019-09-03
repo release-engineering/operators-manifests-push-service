@@ -1,4 +1,4 @@
-FROM fedora:29
+FROM fedora:30
 LABEL \
     name="Operators Manifests Push Service" \
     vendor="Red Hat, Inc" \
