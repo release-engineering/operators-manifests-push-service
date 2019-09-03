@@ -57,9 +57,13 @@ class FlatBundle():
         self.bundle_dict = bundle_dict
 
     def __eq__(self, other):
+        o = other
+        if isinstance(other, str):
+            o = FlatBundle(yaml.safe_load(other))
+
         for field in FlatBundle.FIELDS:
             sd = yaml.safe_load(self.bundle_dict['data'][field])
-            od = yaml.safe_load(other.bundle_dict['data'][field])
+            od = yaml.safe_load(o.bundle_dict['data'][field])
 
             assert isinstance(sd, list)
             assert isinstance(od, list)
