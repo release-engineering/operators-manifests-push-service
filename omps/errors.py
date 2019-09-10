@@ -206,7 +206,12 @@ def init_errors_handling(app):
     @app.errorhandler(OMPSError)
     def omps_errors(e):
         """Handle OMPS application errors"""
-        response = jsonify(e.to_dict())
+        err_dict = e.to_dict()
+        app.logger.error(
+            'OMPS error: %s: %r',
+            err_dict['error'], err_dict
+        )
+        response = jsonify(err_dict)
         response.status_code = e.code
         return response
 
