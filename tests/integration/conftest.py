@@ -24,8 +24,6 @@ def quay():
 
     yield app_registry
 
-    app_registry.delete(test_env['test_namespace'], test_env['test_package'])
-
 
 @pytest.fixture(scope='session')
 def omps(quay):

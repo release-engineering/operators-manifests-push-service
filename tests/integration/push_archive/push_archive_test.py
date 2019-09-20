@@ -48,7 +48,8 @@ def test_nested_manifest(omps, quay, tmp_path):
     then pushing the data is successful.
     """
     version = '1.0.0'
-    quay.delete(test_env['test_namespace'], test_env['test_package'])
+    # Clean up application repository before running.
+    omps.delete(test_env['test_namespace'], test_env['test_package'])
     archive = shutil.make_archive(tmp_path / 'archive', 'zip',
                                   'tests/integration/artifacts/nested/')
 
