@@ -83,10 +83,23 @@ organization:
     },
 ]
 ```
-all specified `old` registries will be replaced by `new` in all manifests yaml
-files for that organization. Replacement happen during pushing manifests into
-application registry.
+All specified `old` registries will be replaced by `new` in all manifests yaml
+files for that organization.
 
+You can pattern match and replace registry strings with the regexp field instead
+of matching whole strings.  Both `old` and `new` will be evalutated as regexes
+when `regexp` is set to `True`.  If `regexp` is missing it defaults to `False`.
+Here's an example:
+```
+"replace_registry": [
+    {
+        "old": "quay.io$",
+        "new": "example.com",
+        "regexp": True,
+    },
+]
+```
+Replacements occur when pushing manifests into the application registry.
 
 ### Greenwave integration
 

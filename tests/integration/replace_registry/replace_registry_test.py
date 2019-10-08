@@ -41,7 +41,7 @@ def test_replace_during_nvr_push(omps, quay, koji, tmp_path):
         the manifest at 'path'
 
         Args:
-            replace_conf: List of {'old': ..., 'new': ...} dictionaries.
+            replace_conf: List of {'old': ..., 'new': ..., 'regexp': ...} dictionaries.
             path: Path of the manifest.
 
         Returns:

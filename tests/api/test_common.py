@@ -22,7 +22,7 @@ def test_replace_registries(datadir):
     old = 'quay.io'
     new = 'example.com'
     qo = QuayOrganization('testorg', 'random token', replace_registry_conf=[
-        {'old': old, 'new': new}
+        {'old': old, 'new': new, 'regexp': False}
     ])
 
     should_be_replaced = set()

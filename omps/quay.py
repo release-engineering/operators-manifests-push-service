@@ -257,9 +257,15 @@ class QuayOrganization:
             return text
 
         for conf in self._replace_registry_conf:
-            old = conf['old']
             new = conf['new']
-            if old in text:
+            old = conf['old']
+            regexp = conf.get('regexp', False)
+
+            if regexp:
+                if re.search(old, text, flags=re.MULTILINE):
+                    self.logger.info("Replacing registries with regexp '%s'", regexp)
+                    text = re.sub(old, new, text, flags=re.MULTILINE)
+            elif old in text:
                 self.logger.info("Replacing registry '%s' with '%s'", old, new)
                 text = text.replace(old, new)
 
