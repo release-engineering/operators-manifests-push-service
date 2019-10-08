@@ -483,6 +483,19 @@ class TestQuayOrganization:
         assert res == text
         assert id(res) == id(text)
 
+    @pytest.mark.parametrize('text,expected', [
+        (
+            'Registry reg_old will be replaced using a regexp: reg_old',
+            'Registry reg_old will be replaced using a regexp: reg_new',
+        )
+    ])
+    def test_regexp_replace_registries(self, text, expected):
+        """Test if registries are replaced properly with regexp"""
+        replace_conf = [{'old': 'reg_old$', 'new': 'reg_new', 'regexp': True}]
+        org = 'testorg'
+        qo = QuayOrganization(org, TOKEN, replace_registry_conf=replace_conf)
+        assert qo.replace_registries(text) == expected
+
 
 class TestOrgManager:
     """Tets for OrgManager class"""

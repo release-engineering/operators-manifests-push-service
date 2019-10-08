@@ -130,6 +130,29 @@ def test_organizations():
     assert conf.organizations == expected
 
 
+def test_organziation_regexp():
+    """Organziation with regexp Test"""
+    expected = {
+        'myorg': {
+            'public': False,
+            'oauth_token': 'token',
+            'replace_registry': [
+                {
+                    'old': 'quay.io/$',
+                    'new': 'example.com',
+                    'regexp': True,
+                },
+            ]
+        }
+    }
+
+    class ConfClass(DefaultConfig):
+        ORGANIZATIONS = expected
+
+    conf = Config(ConfClass)
+    assert conf.organizations == expected
+
+
 @pytest.mark.parametrize('conf', [
     {
         'organization': None
@@ -159,6 +182,12 @@ def test_organizations():
         'organization': {
             'replace_registry': [
                 {'old': 'expected new too'}
+            ]
+        }
+    }, {
+        'organization': {
+            'replace_registry': [
+                {'regexp': False}
             ]
         }
     }
