@@ -269,11 +269,16 @@ class TestQuayOrganization:
 
         with requests_mock.Mocker() as m:
             m.get(
-                '/cnr/api/v1/packages/{}/{}'.format(org, repo),
+                f'/cnr/api/v1/packages?namespace={org}',
                 json=[
-                    {'release': "1.0.0"},
-                    {'release': "1.2.0"},
-                    {'release': "1.0.1"},
+                    {
+                        'name': 'org/something_else',
+                        'releases': ["2.0.0"],
+                    },
+                    {
+                        'name': f'{org}/{repo}',
+                        'releases': ["1.2.0", "1.1.0", "1.0.0"]
+                    },
                 ]
             )
 
@@ -288,8 +293,13 @@ class TestQuayOrganization:
 
         with requests_mock.Mocker() as m:
             m.get(
-                '/cnr/api/v1/packages/{}/{}'.format(org, repo),
-                status_code=404,
+                f'/cnr/api/v1/packages?namespace={org}',
+                json=[
+                    {
+                        'name': 'org/something_else',
+                        'releases': ["2.0.0"],
+                    }
+                ]
             )
 
             qo = QuayOrganization(org, "token")
@@ -309,10 +319,13 @@ class TestQuayOrganization:
 
         with requests_mock.Mocker() as m:
             m.get(
-                '/cnr/api/v1/packages/{}/{}'.format(org, repo),
+                f'/cnr/api/v1/packages?namespace={org}',
                 json=[
-                    {'release': "1.0.0-invalid"},
-                ],
+                    {
+                        'name': f'{org}/{repo}',
+                        'releases': ["1.0.0-invalid"]
+                    },
+                ]
             )
 
             qo = QuayOrganization(org, "token")
@@ -327,11 +340,16 @@ class TestQuayOrganization:
 
         with requests_mock.Mocker() as m:
             m.get(
-                '/cnr/api/v1/packages/{}/{}'.format(org, repo),
+                f'/cnr/api/v1/packages?namespace={org}',
                 json=[
-                    {'release': "1.0.0"},
-                    {'release': "1.2.0"},
-                    {'release': "1.0.1-random"},
+                    {
+                        'name': 'org/something_else',
+                        'releases': ["2.0.0"],
+                    },
+                    {
+                        'name': f'{org}/{repo}',
+                        'releases': ["1.2.0", "1.0.1-random", "1.0.0"]
+                    },
                 ]
             )
 
@@ -341,7 +359,6 @@ class TestQuayOrganization:
 
     @pytest.mark.parametrize('error_code, expected_exc_type', [
         (403, QuayAuthorizationError),
-        (404, QuayPackageNotFound),
         (500, QuayPackageError)
     ])
     def test_get_releases_raw_errors(self, error_code, expected_exc_type):
@@ -353,7 +370,7 @@ class TestQuayOrganization:
         qo = QuayOrganization(org, TOKEN)
 
         with requests_mock.Mocker() as m:
-            m.get(f'/cnr/api/v1/packages/{org}/{repo}',
+            m.get(f'/cnr/api/v1/packages?namespace={org}',
                   status_code=error_code)
 
             with pytest.raises(expected_exc_type):

@@ -15,9 +15,8 @@ EntrypointMeta = namedtuple('EntrypointMeta', 'url_path,org,repo,version,nvr')
     True,  # endpoint with version
     False,  # endpoint without version
 ])
-def endpoint_push_zipfile(request, release_version):
+def endpoint_push_zipfile(request, release_version, organization):
     """Returns URL for zipfile endpoints"""
-    organization = 'testorg'
     version = release_version if request.param else None
 
     url_path = '/v2/{}/zipfile'.format(organization)
@@ -34,9 +33,8 @@ def endpoint_push_zipfile(request, release_version):
     True,  # endpoint with version
     False,  # endpoint without version
 ])
-def endpoint_push_koji(request, release_version):
+def endpoint_push_koji(request, release_version, organization):
     """Returns URL for koji endpoints"""
-    organization = 'testorg'
     nvr = 'build-1.0.1-2'
     version = release_version if request.param else None
 
@@ -54,9 +52,8 @@ def endpoint_push_koji(request, release_version):
     True,  # endpoint with version
     False,  # endpoint without version
 ])
-def endpoint_packages(request, release_version):
+def endpoint_packages(request, release_version, organization):
     """Returns URL for packages endpoints"""
-    organization = 'testorg'
     repo = 'repo-Y'
 
     url_path = '/v2/{}/{}'.format(organization, repo)

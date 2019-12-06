@@ -309,17 +309,18 @@ class QuayOrganization:
         msg = "Failed to push manifest: {}".format(e)
         raise_for_courier_exception(e, new_msg=msg)
 
-    def _get_repo_content(self, repo):
+    def _get_org_content(self):
         """Return content of repository"""
-        endpoint = '/cnr/api/v1/packages/'
-        url = '{q}{e}{o}/{r}'.format(
-            q=self._quay_url,
-            e=endpoint,
-            o=self._organization,
-            r=repo,
-        )
+        endpoint = '/cnr/api/v1/packages'
+        url = f'{self._quay_url}{endpoint}'
         headers = {'Authorization': self._token}
-        res = requests.get(url, headers=headers, timeout=self._timeout)
+        params = {'namespace': self._organization}
+        res = requests.get(
+            url,
+            headers=headers,
+            params=params,
+            timeout=self._timeout
+        )
 
         res.raise_for_status()
         return res.json()
@@ -345,19 +346,24 @@ class QuayOrganization:
                     except ValueError:
                         quay_response = {}
                     raise QuayAuthorizationError(msg, quay_response)
-                elif exc.response.status_code == 404:
-                    msg = ("Package {}/{} not found"
-                           .format(self._organization, repo))
-                    raise QuayPackageNotFound(msg)
 
             raise QuayPackageError(msg)
 
+        def get_repo(org_response):
+            exp_name = f'{self._organization}/{repo}'
+            for r in org_response:
+                if r['name'] == exp_name:
+                    return r
+
+            msg = f"Package {self._organization}/{repo} not found"
+            raise QuayPackageNotFound(msg)
+
         try:
-            res = self._get_repo_content(repo)
+            res = self._get_org_content()
         except requests.exceptions.RequestException as e:
             _raise(e)
 
-        releases = [package['release'] for package in res]
+        releases = get_repo(res)['releases']
         return releases
 
     def get_releases(self, repo):
