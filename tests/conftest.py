@@ -29,6 +29,11 @@ ManifestDirMeta = namedtuple('ManifestDirMeta', ['path', 'pkg_name', 'valid'])
 
 
 @pytest.fixture()
+def organization():
+    return 'testorg'
+
+
+@pytest.fixture()
 def release_version():
     return "0.0.1"
 
@@ -146,20 +151,23 @@ def mocked_quay_io():
     """Mocking quay.io answers"""
     with requests_mock.Mocker() as m:
         m.get(
-            re.compile(r'/cnr/api/v1/packages/.*'),
-            status_code=404,
+            re.compile(r'/cnr/api/v1/packages\?.*'),
+            json=[]
         )
         yield m
 
 
 @pytest.fixture
-def mocked_packages_delete_quay_io(release_version):
+def mocked_packages_delete_quay_io(release_version, organization):
     """Mocking quay.io answers for retrieving and deleting packages"""
     with requests_mock.Mocker() as m:
         m.get(
-            re.compile(r'/cnr/api/v1/packages/.*'),
+            re.compile(r'/cnr/api/v1/packages\?.*'),
             json=[
-                {"release": release_version},
+                {
+                    "releases": [release_version],
+                    "name": f'{organization}/repo-Y'
+                },
             ],
         )
         m.delete(
