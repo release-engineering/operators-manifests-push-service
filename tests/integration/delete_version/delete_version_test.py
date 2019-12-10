@@ -92,11 +92,9 @@ def test_delete_all_versions(omps, quay, tmp_path):
     response = omps.delete(test_env['test_namespace'], test_env['test_package'])
 
     assert response.status_code == requests.codes.ok
-    assert response.json() == {
-        'deleted': versions,
-        'organization': test_env['test_namespace'],
-        'repo': test_env['test_package'],
-    }
+    assert sorted(response.json()["deleted"]) == sorted(versions)
+    assert response.json()["organization"] == test_env["test_namespace"]
+    assert response.json()["repo"] == test_env["test_package"]
 
     assert not quay.get_releases(test_env['test_namespace'],
                                  test_env['test_package'],
