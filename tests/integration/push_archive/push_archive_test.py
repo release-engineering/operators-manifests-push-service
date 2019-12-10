@@ -245,7 +245,7 @@ def test_organization_unaccessible_in_quay(omps, tmp_path):
 
     assert response.status_code == requests.codes.forbidden
     assert response.json()['error'] == 'QuayAuthorizationError'
-    assert 'Cannot retrieve information about package' in response.json()['message']
+    assert "Unauthorized access" in response.json()['message']
 
 
 def test_upload_password_protected_zip(omps):
