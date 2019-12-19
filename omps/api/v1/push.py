@@ -224,6 +224,8 @@ def _zip_flow(*, organization, repo, version, extract_manifest_func,
         if repo is None:
             repo = _get_reponame_from_manifests(tmpdir)
 
+        repo = quay_org.adjust_repository_name(repo)
+
         version = get_package_version(quay_org, repo, version)
         logger.info("Using release version: %s", version)
 

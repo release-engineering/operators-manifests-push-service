@@ -513,6 +513,17 @@ class TestQuayOrganization:
         qo = QuayOrganization(org, TOKEN, replace_registry_conf=replace_conf)
         assert qo.replace_registries(text) == expected
 
+    @pytest.mark.parametrize(('repo', 'suffix', 'expected'), (
+        ('repo', '-suffix', 'repo-suffix'),
+        ('repo-suffix', '-suffix', 'repo-suffix'),
+        ('repo', '', 'repo'),
+        ('repo', None, 'repo'),
+    ))
+    def test_repository_suffix(self, repo, suffix, expected, organization):
+        """Test if repository_suffix property returns correct value"""
+        qo = QuayOrganization(organization, TOKEN, repository_suffix=suffix)
+        assert qo.adjust_repository_name(repo) == expected
+
 
 class TestOrgManager:
     """Tets for OrgManager class"""
@@ -537,7 +548,10 @@ class TestOrgManager:
                     'replace_registry': [
                         {'new': 'reg1', 'old': 'reg2'},
                     ]
-                }
+                },
+                'org_with_repository_suffix': {
+                    'repository_suffix': '-suffix',
+                },
             }
 
         conf = Config(ConfClass)
@@ -568,6 +582,9 @@ class TestOrgManager:
         assert not priv_org_replacing_registries.public
         assert not priv_org_replacing_registries.oauth_access
         assert priv_org_replacing_registries.registry_replacing_enabled
+
+        org_with_repository_suffix = om.get_org('org_with_repository_suffix', 'cnr_token')
+        assert org_with_repository_suffix.adjust_repository_name('repo') == 'repo-suffix'
 
     def test_getting_unconfigured_org(self):
         """Test of getting organization instance whne org is not configured in

@@ -156,6 +156,10 @@ class OrgManager:
                             },
                             "required": ["old", "new"],
                         }
+                    },
+                    "repository_suffix": {
+                        "description": "suffix to append to repository name",
+                        "type": "string"
                     }
                 },
             },
@@ -199,7 +203,8 @@ class OrgManager:
             oauth_token=org_config.get('oauth_token'),
             public=org_config.get('public', False),
             timeout=self._timeout,
-            replace_registry_conf=org_config.get('replace_registry')
+            replace_registry_conf=org_config.get('replace_registry'),
+            repository_suffix=org_config.get('repository_suffix'),
         )
 
 
@@ -208,7 +213,7 @@ class QuayOrganization:
 
     def __init__(
         self, organization, cnr_token, oauth_token=None, public=False,
-        timeout=None, replace_registry_conf=None
+        timeout=None, replace_registry_conf=None, repository_suffix=None
     ):
         """
         :param organization: organization name
@@ -226,6 +231,7 @@ class QuayOrganization:
         self._public = public
         self._timeout = timeout
         self._replace_registry_conf = replace_registry_conf
+        self._repository_suffix = repository_suffix
 
     @property
     def public(self):
@@ -270,6 +276,24 @@ class QuayOrganization:
                 text = text.replace(old, new)
 
         return text
+
+    def adjust_repository_name(self, repo):
+        """Returns the modified repository name
+
+        The repository name is modified if there's a repository_suffix
+        configured for the Quay organization *and* the repository name
+        does not already end in the repository_suffix
+
+        :param repo: name of repository
+        :rtype: str
+        :return: text with replaced registries
+        """
+        if self._repository_suffix:
+            if not repo.endswith(self._repository_suffix):
+                self.logger.info("Applying repository suffix, %s, to %s",
+                                 self._repository_suffix, repo)
+                repo = repo + self._repository_suffix
+        return repo
 
     def push_operator_manifest(self, repo, version, source_dir):
         """Build, verify and push operators artifact to quay.io registry
