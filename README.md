@@ -101,6 +101,15 @@ Here's an example:
 ```
 Replacements occur when pushing manifests into the application registry.
 
+#### Altering repository names
+
+Organizations can be configured so a suffix is appended to the repository name.
+The suffix is only applied if the repository name does not already end with the suffix.
+Example configuration:
+```
+"repository_suffix": "-suffix"
+```
+
 ### Greenwave integration
 
 This is optional. When `GREENWAVE` settings are missing in config file checks
