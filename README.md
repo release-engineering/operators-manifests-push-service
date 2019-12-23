@@ -101,13 +101,14 @@ Here's an example:
 ```
 Replacements occur when pushing manifests into the application registry.
 
-#### Altering repository names
+#### Altering package names
 
-Organizations can be configured so a suffix is appended to the repository name.
-The suffix is only applied if the repository name does not already end with the suffix.
+Organizations can be configured so a suffix is appended to the package and the repository names.
+The suffix is only applied to the package if it does not already end with the suffix.
+The repository is only modified if it's being taken from the packageName as in the v2 API.
 Example configuration:
 ```
-"repository_suffix": "-suffix"
+"package_name_suffix": "-suffix"
 ```
 
 ### Greenwave integration

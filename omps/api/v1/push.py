@@ -10,7 +10,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import zipfile
 
 from flask import jsonify, current_app, request
-from yaml import safe_load
+from ruamel.yaml import YAML
 
 from . import API
 from omps.api.common import extract_auth_token, replace_registries
@@ -166,19 +166,36 @@ def get_package_version(quay_org, repo, version=None):
     return version
 
 
-def _get_reponame_from_manifests(source_dir):
-    for filename in sorted(os.listdir(source_dir)):
-        filename = os.path.join(source_dir, filename)
+def _process_package_name(quay_org, dir_path):
+    """Returns package name from metadata
+    Retrieve the package name from the packageName attribute
+    of the package yaml file.
+    If not found, or malformed, raise PackageValidationError.
+    If package_name_suffix is configured, modify the packageName.
+    """
+    yaml = YAML()
+    for filename in sorted(os.listdir(dir_path)):
+        filename = os.path.join(dir_path, filename)
         if filename.endswith('.yaml') or filename.endswith('.yml'):
             try:
-                with open(filename, 'r') as f:
-                    contents = safe_load(f.read())
+                with open(filename, 'r+') as f:
+                    contents = yaml.load(f.read())
                     if 'packageName' in contents:
                         name = contents['packageName']
                         logger.info("Found packageName %s in %s", name, filename)
+                        if quay_org.package_name_suffix:
+                            if not name.endswith(quay_org.package_name_suffix):
+                                new_name = name + quay_org.package_name_suffix
+                                contents['packageName'] = new_name
+                                f.seek(0)
+                                yaml.dump(contents, f)
+                                f.truncate()
+                                logger.info("Modified packageName %s in %s to %s",
+                                            name, filename, new_name)
+                                name = new_name
                         return name
             except Exception:
-                message = "Failed to parse yaml file %s" % filename[len(source_dir):]
+                message = "Failed to process yaml file %s" % filename[len(dir_path):]
                 logger.exception(message)
                 raise PackageValidationError(message)
 
@@ -221,10 +238,9 @@ def _zip_flow(*, organization, repo, version, extract_manifest_func,
         logger.info("Extracted files: %s", extracted_files)
         data['extracted_files'] = extracted_files
 
+        package_name = _process_package_name(quay_org, tmpdir)
         if repo is None:
-            repo = _get_reponame_from_manifests(tmpdir)
-
-        repo = quay_org.adjust_repository_name(repo)
+            repo = package_name
 
         version = get_package_version(quay_org, repo, version)
         logger.info("Using release version: %s", version)
