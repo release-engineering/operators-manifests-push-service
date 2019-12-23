@@ -60,9 +60,9 @@ setup(
         'Flask==1.0.*',
         'jsonschema',
         'koji',
-        'PyYAML',
         'requests',
         'operator-courier>=2.1.1',
+        'ruamel.yaml',
     ],
     extras_require={
         'test': [

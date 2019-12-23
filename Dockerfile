@@ -18,9 +18,9 @@ RUN dnf -y install \
     python3-flask \
     python3-jsonschema \
     python3-koji \
-    python3-pyyaml \
     python3-requests \
     python3-operator-courier \
+    python3-ruamel-yaml \
     && dnf -y clean all \
     && rm -rf /tmp/*
 

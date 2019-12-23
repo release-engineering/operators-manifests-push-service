@@ -4,11 +4,16 @@
 #
 
 from io import BytesIO
+from textwrap import dedent
+from unittest import mock
+import os.path
 
+import flexmock
 import requests
 import pytest
 
 from omps import constants
+from omps.quay import QuayOrganization
 
 
 def test_push_zipfile(
@@ -34,6 +39,78 @@ def test_push_zipfile(
         'extracted_files': valid_manifests_archive.files,
     }
     assert rv.get_json() == expected
+
+
+@pytest.mark.parametrize(('suffix_func', 'expected_pkg_name_func'), (
+    (lambda _: '-suffix', lambda x: x + '-suffix'),
+    (lambda x: x, lambda x: x),
+    (lambda x: '', lambda x: x),
+))
+@mock.patch('omps.api.v1.push.ORG_MANAGER')
+def test_push_zipfile_with_package_name_suffix(
+        mocked_org_manager, client, valid_manifests_archive,
+        endpoint_push_zipfile, mocked_quay_io, mocked_op_courier_push,
+        auth_header, suffix_func, expected_pkg_name_func):
+    """Test REST API for pushing operators form zipfile with package_name_suffix"""
+    original_pkg_name = valid_manifests_archive.pkg_name
+    expected_pkg_name = expected_pkg_name_func(original_pkg_name)
+
+    mocked_org_manager.get_org.return_value = QuayOrganization(
+        endpoint_push_zipfile.org, 'cnr_token',
+        package_name_suffix=suffix_func(original_pkg_name))
+
+    def verify_modified_package_name(repo, version, source_dir):
+        # The modified YAML file should retain comments and defined order. The
+        # only modification should be the package name.
+        if valid_manifests_archive.pkg_name == 'marketplace':
+            pkg_manifest = (
+                'deploy/chart/catalog_resources/rh-operators/'
+                'marketplace.v0.0.1.clusterserviceversion.yaml')
+            expected_packages_yaml = dedent("""\
+                #! package-manifest: {pkg_manifest}
+                packageName: {pkg_name}
+                channels:
+                - name: alpha
+                  currentCSV: marketplace-operator.v0.0.1
+                """)
+            packages_yaml_path = os.path.join(source_dir, 'packages.yaml')
+        elif valid_manifests_archive.pkg_name == 'etcd':
+            pkg_manifest = (
+                './deploy/chart/catalog_resources/rh-operators/'
+                'etcdoperator.v0.9.2.clusterserviceversion.yaml')
+            expected_packages_yaml = dedent("""\
+                #! package-manifest: {pkg_manifest}
+                packageName: {pkg_name}
+                channels:
+                - name: alpha
+                  currentCSV: etcdoperator.v0.9.2
+                """)
+            packages_yaml_path = os.path.join(source_dir, 'etcd.package.yaml')
+        else:
+            raise ValueError(
+                'Unsupported manifests archive, {}'.format(valid_manifests_archive))
+        expected_packages_yaml = expected_packages_yaml.format(
+            pkg_manifest=pkg_manifest,
+            pkg_name=expected_pkg_name)
+        with open(packages_yaml_path) as f:
+            assert f.read() == expected_packages_yaml
+
+    flexmock(QuayOrganization)\
+        .should_receive('push_operator_manifest')\
+        .replace_with(verify_modified_package_name)\
+        .once()
+
+    with open(valid_manifests_archive.path, 'rb') as f:
+        rv = client.post(
+            endpoint_push_zipfile.url_path,
+            headers=auth_header,
+            data={'file': (f, f.name)},
+            content_type='multipart/form-data',
+        )
+
+    assert rv.status_code == 200, rv.get_json()
+    # In V1, package_name_suffix does not change the repository name.
+    assert rv.get_json()['repo'] == endpoint_push_zipfile.repo
 
 
 @pytest.mark.parametrize('filename', (
