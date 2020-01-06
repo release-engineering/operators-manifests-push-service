@@ -73,6 +73,31 @@ def private_quay():
 
 
 @pytest.fixture
+def suffix_quay():
+    quay = None
+    config = test_env.get("alter_package_name")
+
+    if config:
+        quay = QuayAppRegistry(test_env["quay_app_registry_api"],
+                               test_env["quay_api"],
+                               test_env["quay_oauth_token"])
+        quay.login_to_cnr(config["user"],
+                          config["password"])
+
+    yield quay
+
+    if quay:
+        quay.delete(config["namespace"],
+                    config["package"] + config["suffix"])
+
+
+@pytest.fixture
 def private_omps(private_quay):
     if private_quay:
         return OMPS(test_env['omps_url'], private_quay.token)
+
+
+@pytest.fixture
+def suffix_omps(suffix_quay):
+    if suffix_quay:
+        return OMPS(test_env["omps_url"], suffix_quay.token)
