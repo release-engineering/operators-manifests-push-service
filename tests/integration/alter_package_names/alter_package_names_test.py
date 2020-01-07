@@ -8,14 +8,7 @@ import shutil
 import pytest
 import yaml
 import requests
-from tests.integration.utils import test_env, make_bundle
-
-
-def is_yaml_file(path):
-    """
-    Tell if 'path' ends in .yaml or .yml
-    """
-    return path.endswith(".yaml") or path.endswith(".yml")
+from tests.integration.utils import test_env, make_bundle, is_yaml_file
 
 
 def has(suffix, manifest_path):

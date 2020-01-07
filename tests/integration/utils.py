@@ -499,3 +499,10 @@ def concatenated_files(directory):
         with open(file, 'r') as fp:
             ret += fp.read()
     return ret
+
+
+def is_yaml_file(path):
+    """
+    Tell if 'path' ends in .yaml or .yml
+    """
+    return path.endswith(".yaml") or path.endswith(".yml")
