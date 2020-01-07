@@ -188,11 +188,12 @@ class OrgManager:
         for org_name, org_conf in self._organizations.items():
             logger.info(
                 'Organization "%s" configured: public=%s, oauth_access=%s, '
-                'replacing_registry_enabled=%s',
+                'replacing_registry_enabled=%s, package_name_suffix=%s',
                 org_name,
                 org_conf.get('public', False),
                 bool(org_conf.get('oauth_token')),
-                bool(org_conf.get('replace_registry'))
+                bool(org_conf.get('replace_registry')),
+                org_conf.get('package_name_suffix'),
             )
 
     def get_org(self, organization, cnr_token):
