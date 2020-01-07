@@ -8,14 +8,7 @@ import shutil
 import pytest
 from distutils import dir_util
 from itertools import cycle
-from tests.integration.utils import test_env, make_bundle
-
-
-def is_yaml_file(path):
-    """
-    Tell if 'path' ends in .yaml or .yml
-    """
-    return path.endswith(".yaml") or path.endswith(".yml")
+from tests.integration.utils import test_env, make_bundle, is_yaml_file
 
 
 @pytest.mark.skipif(
