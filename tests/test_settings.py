@@ -48,7 +48,7 @@ def test_defaults(key, expected):
     conf = Config(ConfClass)
     conf.set_app_defaults(app)
 
-    assert app.config[key] == expected, "failed for key '{}'".format(key)
+    assert app.config[key] == expected, f"failed for key '{key}'"
 
 
 def test_log_level_debug():

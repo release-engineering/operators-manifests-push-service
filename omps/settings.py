@@ -52,9 +52,7 @@ def init_config(app):
             config_module = imp.load_source('omps_runtime_config', config_file)
         except IOError as e:
             raise RuntimeError(
-                'Failed to import configuration file "{}": {}'.format(
-                    config_file, e
-                )
+                f'Failed to import configuration file "{config_file}": {e}'
             )
         else:
             config_section_obj = getattr(config_module, config_section, None)
@@ -177,19 +175,19 @@ class Config(object):
         attribute and self.key property to set/get/del the attribute.
         """
         if key in ('set_item', 'set_app_defaults') or key.startswith('_'):
-            raise Exception("Configuration item's name is not allowed: %s" % key)
+            raise Exception(f"Configuration item's name is not allowed: {key}")
 
         # Create the empty self._key attribute, so we can assign to it.
         setattr(self, "_" + key, None)
 
         # Create self.key property to access the self._key attribute.
         # Use the setifok_func if available for the attribute.
-        setifok_func = '_setifok_{}'.format(key)
+        setifok_func = f'_setifok_{key}'
         if hasattr(self, setifok_func):
             setx = lambda self, val: getattr(self, setifok_func)(val)
         else:
             setx = lambda self, val: setattr(self, "_" + key, val)
-        get_func = '_get_{}'.format(key)
+        get_func = f'_get_{key}'
         if hasattr(self, get_func):
             getx = lambda self: getattr(self, get_func)()
         else:
@@ -246,7 +244,7 @@ class Config(object):
         try:
             OrgManager.validate_conf(s)
         except ValidationError as e:
-            raise ValueError("Organizations config: {}".format(e))
+            raise ValueError(f"Organizations config: {e}")
         self._organizations = s
 
     def _setifok_greenwave(self, s):

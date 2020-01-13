@@ -21,9 +21,9 @@ def endpoint_push_zipfile(request, release_version):
     repo = 'repo-Y'
     version = release_version if request.param else None
 
-    url_path = '/v1/{}/{}/zipfile'.format(organization, repo)
+    url_path = f'/v1/{organization}/{repo}/zipfile'
     if version:
-        url_path = '{}/{}'.format(url_path, version)
+        url_path = f'{url_path}/{version}'
 
     yield EntrypointMeta(
         url_path=url_path, org=organization,
@@ -42,9 +42,9 @@ def endpoint_push_koji(request, release_version):
     nvr = 'build-1.0.1-2'
     version = release_version if request.param else None
 
-    url_path = '/v1/{}/{}/koji/{}'.format(organization, repo, nvr)
+    url_path = f'/v1/{organization}/{repo}/koji/{nvr}'
     if version:
-        url_path = '{}/{}'.format(url_path, version)
+        url_path = f'{url_path}/{version}'
 
     yield EntrypointMeta(
         url_path=url_path, org=organization,
@@ -61,9 +61,9 @@ def endpoint_packages(request, release_version):
     organization = 'testorg'
     repo = 'repo-Y'
 
-    url_path = '/v1/{}/{}'.format(organization, repo)
+    url_path = f'/v1/{organization}/{repo}'
     if request.param:
-        url_path = '{}/{}'.format(url_path, release_version)
+        url_path = f'{url_path}/{release_version}'
 
     yield EntrypointMeta(
         url_path=url_path, org=organization,

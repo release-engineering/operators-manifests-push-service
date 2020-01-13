@@ -37,8 +37,7 @@ def validate_allowed_extension(filename):
     _, extension = os.path.splitext(filename)
     if extension.lower() not in ALLOWED_EXTENSIONS:
         raise OMPSUploadedFileError(
-            'Uploaded file extension "{}" is not any of {}'.format(
-                extension, ALLOWED_EXTENSIONS))
+            f'Uploaded file extension "{extension}" is not any of {ALLOWED_EXTENSIONS}')
 
 
 def _extract_zip_file(
@@ -84,7 +83,7 @@ def _extract_zip_file(
 
     if bad_file is not None:
         raise OMPSUploadedFileError(
-            "CRC check failed for file {} in archive".format(bad_file)
+            f"CRC check failed for file {bad_file} in archive"
         )
     archive.extractall(target_dir)
     archive.close()
@@ -195,7 +194,7 @@ def _process_package_name(quay_org, dir_path):
                                 name = new_name
                         return name
             except Exception:
-                message = "Failed to process yaml file %s" % filename[len(dir_path):]
+                message = f"Failed to process yaml file {filename[len(dir_path):]}"
                 logger.exception(message)
                 raise PackageValidationError(message)
 
