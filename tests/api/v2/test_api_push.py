@@ -88,7 +88,7 @@ def test_push_zipfile_with_package_name_suffix(
             packages_yaml_path = os.path.join(source_dir, 'etcd.package.yaml')
         else:
             raise ValueError(
-                'Unsupported manifests archive, {}'.format(valid_manifests_archive))
+                f'Unsupported manifests archive, {valid_manifests_archive}')
         expected_packages_yaml = expected_packages_yaml.format(
             pkg_manifest=pkg_manifest,
             pkg_name=expected_pkg_name)

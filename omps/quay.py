@@ -53,9 +53,7 @@ class ReleaseVersion:
         """
         def _raise(msg):
             raise ValueError(
-                "Version '{}' must be in format '<int>.<int>.<int>': {}".format(
-                    version, msg
-                ))
+                f"Version '{version}' must be in format '<int>.<int>.<int>': {msg}")
 
         assert isinstance(version, str)
 
@@ -63,7 +61,7 @@ class ReleaseVersion:
         regexp = r"^{p}\.{p}\.{p}$".format(p=r_int_part)
         match = re.match(regexp, version)
         if not match:
-            _raise("must match regexp '{}'".format(regexp))
+            _raise(f"must match regexp '{regexp}'")
 
     @classmethod
     def from_str(cls, version):
@@ -104,12 +102,10 @@ class ReleaseVersion:
         return self.version_tuple < other.version_tuple
 
     def __str__(self):
-        return '{}.{}.{}'.format(self._x, self._y, self._z)
+        return f'{self._x}.{self._y}.{self._z}'
 
     def __repr__(self):
-        return "{}({}, {}, {})".format(
-            self.__class__.__name__, self._x, self._y, self._z
-        )
+        return f"{self.__class__.__name__}({self._x}, {self._y}, {self._z})"
 
     def increment(self):
         """Increments the most significant part of version by 1, zeroing
@@ -224,7 +220,7 @@ class QuayOrganization:
         :param int timeout: timeout for Quay requests in seconds
         """
         self.logger = logging.getLogger(
-            '{0}[{1}]'.format(self.__class__.__name__, organization))
+            f'{self.__class__.__name__}[{organization}]')
         self._quay_url = "https://quay.io"
         self._organization = organization
         self._token = cnr_token
@@ -317,7 +313,7 @@ class QuayOrganization:
         self.logger.error(
             "push_operator_manifest: Operator courier call failed: %s", e
         )
-        msg = "Failed to push manifest: {}".format(e)
+        msg = f"Failed to push manifest: {e}"
         raise_for_courier_exception(e, new_msg=msg)
 
     def _get_org_content(self):
@@ -415,9 +411,7 @@ class QuayOrganization:
             # no valid versions found, assume that this will be first package
             # uploaded by service
             raise QuayPackageNotFound(
-                "Package {}/{} has not valid versions uploaded".format(
-                    self._organization, repo
-                )
+                f"Package {self._organization}/{repo} has not valid versions uploaded"
             )
 
         return max(self.get_releases(repo))
@@ -467,16 +461,13 @@ class QuayOrganization:
         :param str repo: repository name
         """
         assert self.oauth_access, "Needs Oauth access"
-        endpoint = '/api/v1/repository/{org}/{repo}/changevisibility'.format(
-            org=self._organization,
-            repo=repo,
-        )
-        url = '{q}{e}'.format(q=self._quay_url, e=endpoint)
+        endpoint = f'/api/v1/repository/{self._organization}/{repo}/changevisibility'
+        url = f'{self._quay_url}{endpoint}'
         data = {
             "visibility": "public",
         }
         headers = {
-            "Authorization": "Bearer {}".format(self._oauth_token)
+            "Authorization": f"Bearer {self._oauth_token}"
         }
         self.logger.info("Publishing repository %s", repo)
         r = requests.post(url, headers=headers, json=data, timeout=self._timeout)

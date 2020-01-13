@@ -197,7 +197,7 @@ class QuayAppRegistry:
         self._api_url = quay_app_registry_api
         self._quay_api = quay_api
         self._oauth_header = {
-            'Authorization': 'Bearer {token}'.format(token=oauth_token)
+            'Authorization': f'Bearer {oauth_token}'
         } if oauth_token else None
         self._token = None
         self._cnr_header = None
@@ -220,7 +220,7 @@ class QuayAppRegistry:
                 "password": password
             },
         }
-        url = '{api}/users/login'.format(api=self._api_url)
+        url = f'{self._api_url}/users/login'
 
         r = requests.post(url, json=data)
         r.raise_for_status()
@@ -267,10 +267,7 @@ class QuayAppRegistry:
         Raises:
             HTTPError: For all errors except 404 Not Found.
         """
-        url = '{api}/packages/{namespace}/{package}'.format(
-            api=self._api_url,
-            namespace=namespace,
-            package=package)
+        url = f'{self._api_url}/packages/{namespace}/{package}'
         headers = (authorization and self._cnr_header) or None
 
         r = requests.get(url, headers=headers)
@@ -314,7 +311,7 @@ class QuayAppRegistry:
 
         bundle = ''
         with TemporaryDirectory() as tempdir:
-            archive = '{tempdir}/operator.tar.gz'.format(tempdir=tempdir)
+            archive = f'{tempdir}/operator.tar.gz'
             with open(archive, 'wb') as f:
                 f.write(r.content)
 
@@ -366,7 +363,7 @@ class QuayAppRegistry:
         Raises:
             HTTPError: Getting packages failed.
         """
-        url = '{api}/packages'.format(api=self._api_url)
+        url = f'{self._api_url}/packages'
         headers = (authorization and self._cnr_header) or None
         payload = {'namespace': namespace}
 
@@ -391,15 +388,11 @@ class QuayAppRegistry:
         Raises:
             HTTPError: Deleting a release failed.
         """
-        package_url = '{api}/packages/{name}'.format(
-            api=self._api_url,
-            name=name)
+        package_url = f'{self._api_url}/packages/{name}'
         headers = (authorization and self._cnr_header) or None
 
         for release in releases:
-            url = '{package_url}/{release}/helm'.format(
-                package_url=package_url,
-                release=release)
+            url = f'{package_url}/{release}/helm'
             r = requests.delete(url, headers=headers)
             r.raise_for_status()
 
@@ -414,8 +407,7 @@ class QuayAppRegistry:
 
         Raises: HTTPError if deleting the package failed.
         """
-        url = '{quay_api}/repository/{namespace}/{package}'.format(
-            quay_api=self._quay_api, namespace=namespace, package=package)
+        url = f'{self._quay_api}/repository/{namespace}/{package}'
         r = requests.delete(url, headers=self._oauth_header)
         r.raise_for_status()
 

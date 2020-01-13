@@ -401,8 +401,7 @@ class TestQuayOrganization:
 
         with requests_mock.Mocker() as m:
             m.delete(
-                '/cnr/api/v1/packages/{}/{}/{}/helm'.format(
-                    org, repo, version),
+                f'/cnr/api/v1/packages/{org}/{repo}/{version}/helm',
             )
             qo.delete_release(repo, version)
 
@@ -421,8 +420,7 @@ class TestQuayOrganization:
 
         with requests_mock.Mocker() as m:
             m.delete(
-                '/cnr/api/v1/packages/{}/{}/{}/helm'.format(
-                    org, repo, version),
+                f'/cnr/api/v1/packages/{org}/{repo}/{version}/helm',
                 status_code=code
             )
             with pytest.raises(exc_class):
@@ -437,8 +435,7 @@ class TestQuayOrganization:
 
         with requests_mock.Mocker() as m:
             m.post(
-                '/api/v1/repository/{org}/{repo}/changevisibility'.format(
-                    org=org, repo=repo),
+                f'/api/v1/repository/{org}/{repo}/changevisibility',
                 status_code=requests.codes.ok,
             )
             qo.publish_repo(repo)
@@ -452,8 +449,7 @@ class TestQuayOrganization:
 
         with requests_mock.Mocker() as m:
             m.post(
-                '/api/v1/repository/{org}/{repo}/changevisibility'.format(
-                    org=org, repo=repo),
+                f'/api/v1/repository/{org}/{repo}/changevisibility',
                 status_code=requests.codes.server_error,
             )
             with pytest.raises(QuayPackageError):

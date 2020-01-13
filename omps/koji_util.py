@@ -87,7 +87,7 @@ class KojiUtil:
         """
         metadata = self.session.getBuild(nvr)
         if metadata is None:
-            raise KojiNVRBuildNotFound("NVR not found: {}".format(nvr))
+            raise KojiNVRBuildNotFound(f"NVR not found: {nvr}")
 
         try:
             filename = metadata['extra']['typeinfo']['operator-manifests']['archive']
@@ -97,7 +97,7 @@ class KojiUtil:
                 key = constants.KOJI_OPERATOR_MANIFESTS_ARCHIVE_KEY
                 filename = metadata['extra'][key]
             except KeyError:
-                raise KojiNotAnOperatorImage("Not an operator image: {}".format(nvr))
+                raise KojiNotAnOperatorImage(f"Not an operator image: {nvr}")
             else:
                 url = self._get_url_manifest_from_logs(metadata, nvr, filename)
         else:
