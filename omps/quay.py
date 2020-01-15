@@ -330,6 +330,10 @@ class QuayOrganization:
         )
 
         res.raise_for_status()
+
+        logger.debug("header: %s", res.headers)
+        logger.debug("content: %s", res.json())
+
         return res.json()
 
     def get_releases_raw(self, repo):
