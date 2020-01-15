@@ -152,7 +152,8 @@ def get_package_version(quay_org, repo, version=None):
     if version is None:
         try:
             latest_ver = quay_org.get_latest_release_version(repo)
-        except QuayPackageNotFound:
+        except QuayPackageNotFound as e:
+            logger.debug("Using default release, reason: %s", e)
             version = current_app.config['DEFAULT_RELEASE_VERSION']
         else:
             latest_ver.increment()
