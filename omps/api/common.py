@@ -37,15 +37,20 @@ def replace_registries(quay_org, dir_path):
     logger.info("Replacing registries URLs for organization: %s",
                 quay_org.organization)
 
+    for filename in _yield_yaml_files(dir_path):
+        with open(filename, 'r') as f:
+            text = f.read()
+
+        text = quay_org.replace_registries(text)
+        with open(filename, 'w') as f:
+            f.write(text)
+            f.flush()
+
+
+def _yield_yaml_files(dir_path):
+    """Helper function to iterate only through yaml files"""
     for root, _, files in os.walk(dir_path):
         for fname in files:
             fname_lower = fname.lower()
             if fname_lower.endswith('.yml') or fname_lower.endswith('.yaml'):
-                fpath = os.path.join(root, fname)
-                with open(fpath, 'r') as f:
-                    text = f.read()
-
-                text = quay_org.replace_registries(text)
-                with open(fpath, 'w') as f:
-                    f.write(text)
-                    f.flush()
+                yield os.path.join(root, fname)

@@ -5,19 +5,12 @@
 
 import os
 
-from omps.api.common import replace_registries
+from omps.api.common import replace_registries, _yield_yaml_files
 from omps.quay import QuayOrganization
 
 
 def test_replace_registries(datadir):
     """Test if registry is replaced in all files"""
-    def _yield_yaml_files(dir_path):
-        for root, _, files in os.walk(dir_path):
-            for fname in files:
-                fname_lower = fname.lower()
-                if fname_lower.endswith('.yml') or fname_lower.endswith('.yaml'):
-                    yield os.path.join(root, fname)
-
     dir_path = os.path.join(datadir, 'etcd_op_nested')
     old = 'quay.io'
     new = 'example.com'
