@@ -38,12 +38,12 @@ def replace_registries(quay_org, dir_path):
                 quay_org.organization)
 
     for filename in _yield_yaml_files(dir_path):
-        with open(filename, 'r') as f:
+        with open(filename, 'r+') as f:
             text = f.read()
-
-        text = quay_org.replace_registries(text)
-        with open(filename, 'w') as f:
+            text = quay_org.replace_registries(text)
+            f.seek(0)
             f.write(text)
+            f.truncate()
             f.flush()
 
 
