@@ -111,6 +111,24 @@ Example configuration:
 "package_name_suffix": "-suffix"
 ```
 
+#### Adding annotations to ClusterServiceVersion
+
+An organization can be configured to automatically set annotations on the ClusterServiceVersion
+objects. Templating is supported to include the package name in the value.
+Example configuration:
+```
+"csv_annotations": [
+    {
+        "name": "simple.annotation",
+        "value": "simple.value",
+    },
+    {
+        "name": "annotation.with.package_name",
+        "value": "value.{package_name}",
+    },
+]
+```
+
 ### Greenwave integration
 
 This is optional. When `GREENWAVE` settings are missing in config file checks

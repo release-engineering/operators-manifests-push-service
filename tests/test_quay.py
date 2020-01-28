@@ -537,6 +537,12 @@ class TestOrgManager:
                 'org_with_package_name_suffix': {
                     'package_name_suffix': '-suffix',
                 },
+                'org_with_csv_annotations': {
+                    'csv_annotations': [
+                        {'name': 'spam', 'value': 'maps'},
+                        {'name': 'eggs', 'value': 'sgge'},
+                    ],
+                },
             }
 
         conf = Config(ConfClass)
@@ -571,6 +577,12 @@ class TestOrgManager:
         org_with_package_name_suffix = om.get_org('org_with_package_name_suffix',
                                                   'cnr_token')
         assert org_with_package_name_suffix.package_name_suffix == '-suffix'
+
+        org_with_csv_annotations = om.get_org('org_with_csv_annotations', 'cnr_token')
+        assert org_with_csv_annotations.csv_annotations == [
+            {'name': 'spam', 'value': 'maps'},
+            {'name': 'eggs', 'value': 'sgge'},
+        ]
 
     def test_getting_unconfigured_org(self):
         """Test of getting organization instance whne org is not configured in

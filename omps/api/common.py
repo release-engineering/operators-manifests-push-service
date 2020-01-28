@@ -8,6 +8,8 @@
 import logging
 import os
 
+from ruamel.yaml import YAML
+
 from omps.errors import OMPSAuthorizationHeaderRequired
 
 
@@ -45,6 +47,40 @@ def replace_registries(quay_org, dir_path):
             f.write(text)
             f.truncate()
             f.flush()
+
+
+def adjust_csv_annotations(quay_org, dir_path, context):
+    """Annotates ClusterServiceVersion objects based on org config
+
+    Iterate through all the YAML files in search of the
+    ClusterServiceVersion objects then set the annotations
+    defined in the organization configuration.
+
+    :param quay_org: QuayOrganization
+    :param dir_path: str, path to directory with metadata files
+    :param context: dict, mapping to dynamic annotation values
+    :rtype: None
+    """
+    if not quay_org.csv_annotations:
+        return
+
+    yaml = YAML()
+    # for filename in sorted(os.listdir(dir_path)):
+    for filename in _yield_yaml_files(dir_path):
+        with open(filename, 'r+') as f:
+            contents = yaml.load(f.read())
+            if contents.get('kind') != 'ClusterServiceVersion':
+                continue
+            logger.info('Found ClusterServiceVersion in %s', filename)
+            csv_annotations = (
+                contents.setdefault('metadata', {}).setdefault('annotations', {}))
+            for annotation in quay_org.csv_annotations:
+                value = annotation['value'].format(**context)
+                csv_annotations[annotation['name']] = value
+
+            f.seek(0)
+            yaml.dump(contents, f)
+            f.truncate()
 
 
 def _yield_yaml_files(dir_path):
