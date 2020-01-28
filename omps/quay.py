@@ -156,6 +156,28 @@ class OrgManager:
                     "package_name_suffix": {
                         "description": "suffix to append to package name",
                         "type": "string"
+                    },
+                    "csv_annotations": {
+                        "description": ("annotations to add to each ClusterServiceVersion"
+                                        " object"),
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "name of the annotation"
+                                },
+                                "value": {
+                                    "type": "string",
+                                    "description": (
+                                        "value of the annotation, use python string"
+                                        " format syntax for dynamic values")
+
+                                },
+                            },
+                            "required": ["name", "value"]
+                        }
                     }
                 },
             },
@@ -184,12 +206,14 @@ class OrgManager:
         for org_name, org_conf in self._organizations.items():
             logger.info(
                 'Organization "%s" configured: public=%s, oauth_access=%s, '
-                'replacing_registry_enabled=%s, package_name_suffix=%s',
+                'replacing_registry_enabled=%s, package_name_suffix=%s, '
+                'csv_annotations=%s',
                 org_name,
                 org_conf.get('public', False),
                 bool(org_conf.get('oauth_token')),
                 bool(org_conf.get('replace_registry')),
                 org_conf.get('package_name_suffix'),
+                bool(org_conf.get('csv_annotations')),
             )
 
     def get_org(self, organization, cnr_token):
@@ -202,6 +226,7 @@ class OrgManager:
             timeout=self._timeout,
             replace_registry_conf=org_config.get('replace_registry'),
             package_name_suffix=org_config.get('package_name_suffix'),
+            csv_annotations=org_config.get('csv_annotations'),
         )
 
 
@@ -210,7 +235,8 @@ class QuayOrganization:
 
     def __init__(
         self, organization, cnr_token, oauth_token=None, public=False,
-        timeout=None, replace_registry_conf=None, package_name_suffix=None
+        timeout=None, replace_registry_conf=None, package_name_suffix=None,
+        csv_annotations=None,
     ):
         """
         :param organization: organization name
@@ -229,6 +255,7 @@ class QuayOrganization:
         self._timeout = timeout
         self._replace_registry_conf = replace_registry_conf
         self._package_name_suffix = package_name_suffix
+        self._csv_annotations = csv_annotations
 
     @property
     def public(self):
@@ -245,6 +272,10 @@ class QuayOrganization:
     @property
     def package_name_suffix(self):
         return self._package_name_suffix
+
+    @property
+    def csv_annotations(self):
+        return self._csv_annotations
 
     @property
     def registry_replacing_enabled(self):

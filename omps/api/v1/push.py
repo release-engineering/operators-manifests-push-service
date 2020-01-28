@@ -13,7 +13,7 @@ from flask import jsonify, current_app, request
 from ruamel.yaml import YAML
 
 from . import API
-from omps.api.common import extract_auth_token, replace_registries
+from omps.api.common import extract_auth_token, replace_registries, adjust_csv_annotations
 from omps.constants import (
     ALLOWED_EXTENSIONS,
     DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE,
@@ -246,6 +246,7 @@ def _zip_flow(*, organization, repo, version, extract_manifest_func,
         logger.info("Using release version: %s", version)
 
         replace_registries(quay_org, tmpdir)
+        adjust_csv_annotations(quay_org, tmpdir, {'package_name': package_name})
 
         quay_org.push_operator_manifest(repo, version, tmpdir)
 
