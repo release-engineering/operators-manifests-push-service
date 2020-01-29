@@ -2,4 +2,4 @@
 # Copyright (C) 2019 Red Hat, Inc
 # see the LICENSE file for license
 #
-__version__ = '9.3'
+__version__ = '10.0'
