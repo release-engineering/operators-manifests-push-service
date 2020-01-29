@@ -11,6 +11,17 @@ import requests
 from tests.integration.utils import test_env, make_bundle, is_yaml_file
 
 
+def check_csv_annotations(quay_bundle, expected_annotations):
+    """
+    Test if bundle contains expected annotations
+    """
+
+    for name, value in expected_annotations.items():
+        annotations = quay_bundle["metadata"]["annotations"]
+        assert name in annotations
+        assert annotations[name] == value
+
+
 def has(suffix, manifest_path):
     """
     Tell if 'suffix' can be found in YAML files under 'manifest_path'.
@@ -67,6 +78,8 @@ def test_alter_package_name_during_nvr_push(suffix_omps, suffix_quay, koji, tmp_
 
     assert quay_bundle["packageName"] == config["package"] + config["suffix"]
 
+    check_csv_annotations(quay_bundle, config["csv_annotations"])
+
 
 @pytest.mark.skipif(
     not test_env.get("alter_package_name"),
@@ -103,5 +116,6 @@ def test_alter_package_name_during_archive_push(suffix_omps, suffix_quay, tmp_pa
             )
         )
     )
-
     assert quay_bundle["packageName"] == config["package"] + config["suffix"]
+
+    check_csv_annotations(quay_bundle, config["csv_annotations"])
