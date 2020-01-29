@@ -80,7 +80,7 @@ def suffix_quay():
     if config:
         quay = QuayAppRegistry(test_env["quay_app_registry_api"],
                                test_env["quay_api"],
-                               test_env["quay_oauth_token"])
+                               config["quay_oauth_token"])
         quay.login_to_cnr(config["user"],
                           config["password"])
 
