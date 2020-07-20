@@ -1,4 +1,4 @@
-FROM fedora:30
+FROM fedora:32
 LABEL \
     name="Operators Manifests Push Service" \
     vendor="Red Hat, Inc" \
@@ -21,6 +21,7 @@ RUN dnf -y install \
     python3-requests \
     python3-operator-courier \
     python3-ruamel-yaml \
+    python3-pip \
     && dnf -y clean all \
     && rm -rf /tmp/*
 
