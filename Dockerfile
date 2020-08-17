@@ -19,13 +19,8 @@ RUN dnf -y install \
     python3-jsonschema \
     python3-koji \
     python3-requests \
-    python3-operator-courier \
     python3-ruamel-yaml \
     python3-pip \
-    && dnf -y clean all \
-    && rm -rf /tmp/*
-
-RUN dnf --enablerepo=updates-testing -y update python3-operator-courier \
     && dnf -y clean all \
     && rm -rf /tmp/*
 
@@ -37,6 +32,7 @@ RUN if [ "$cacert_url" != "undefined" ]; then \
 # This will allow a non-root user to install a custom root CA at run-time
 RUN chmod 777 /etc/pki/tls/certs/ca-bundle.crt
 COPY . .
+RUN pip3 install -r requirements-operator-courier.txt
 RUN pip3 install . --no-deps
 USER 1001
 EXPOSE 8080
