@@ -21,6 +21,7 @@ RUN dnf -y install \
     python3-requests \
     python3-ruamel-yaml \
     python3-pip \
+    python3-pyyaml \
     && dnf -y clean all \
     && rm -rf /tmp/*
 
@@ -32,7 +33,7 @@ RUN if [ "$cacert_url" != "undefined" ]; then \
 # This will allow a non-root user to install a custom root CA at run-time
 RUN chmod 777 /etc/pki/tls/certs/ca-bundle.crt
 COPY . .
-RUN pip3 install -r requirements-operator-courier.txt
+RUN pip3 install --require-hashes --no-deps -r requirements-operator-courier.txt
 RUN pip3 install . --no-deps
 USER 1001
 EXPOSE 8080
