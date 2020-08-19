@@ -1,3 +1,1 @@
 operator-courier == 2.1.8 --hash=sha256:b5482baeff662c1bcba5ec0a97e2f21132ee7a155580ab0ac3b886e1affd8396
-validators == 0.17.1 --hash=sha256:898b6b8197fbc320daf25d3b32fa928fd25e225c33790cb58ed54b48aebe1858
-semver==2.10.2  --hash=sha256:21e80ca738975ed513cba859db0a0d2faca2380aef1962f48272ebf9a8a44bd4
