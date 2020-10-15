@@ -15,3 +15,9 @@ DEFAULT_RELEASE_VERSION = '1.0.0'
 ALLOWED_EXTENSIONS = {".zip", }
 
 KOJI_OPERATOR_MANIFESTS_ARCHIVE_KEY = 'operator_manifests_archive'
+
+# IMPORTANT: ruamel will introduce a line break if the yaml line is longer than
+# yaml.width. Unfortunately, this causes issues for JSON values nested within a
+# YAML file, e.g. metadata.annotations."alm-examples" in a CSV file. The default
+# value is 80. Set it to a more forgiving higher number to avoid issues
+YAML_WIDTH = 200
