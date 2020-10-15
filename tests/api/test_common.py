@@ -5,9 +5,13 @@
 
 import os
 
-from ruamel.yaml import YAML
-
-from omps.api.common import replace_registries, adjust_csv_annotations, _yield_yaml_files
+from omps.constants import YAML_WIDTH
+from omps.api.common import (
+    _yield_yaml_files,
+    adjust_csv_annotations,
+    get_yaml_parser,
+    replace_registries,
+)
 from omps.quay import QuayOrganization
 
 
@@ -61,9 +65,15 @@ def test_adjust_csv_annotations(datadir):
 
     adjust_csv_annotations(quay_org, dir_path, {'package_name': 'etcd'})
 
-    yaml = YAML()
+    yaml = get_yaml_parser()
     for fpath in should_have_annotations:
         with open(fpath, 'r') as f:
             contents = yaml.load(f.read())
             for name, value in expected_annotations.items():
                 assert contents['metadata']['annotations'][name] == value
+
+
+def test_get_yaml_parser():
+    """Test if yaml parser is configured correctly"""
+    yaml = get_yaml_parser()
+    assert yaml.width == YAML_WIDTH

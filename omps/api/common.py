@@ -10,6 +10,7 @@ import os
 
 from ruamel.yaml import YAML
 
+from omps.constants import YAML_WIDTH
 from omps.errors import OMPSAuthorizationHeaderRequired
 
 
@@ -64,7 +65,7 @@ def adjust_csv_annotations(quay_org, dir_path, context):
     if not quay_org.csv_annotations:
         return
 
-    yaml = YAML()
+    yaml = get_yaml_parser()
     # for filename in sorted(os.listdir(dir_path)):
     for filename in _yield_yaml_files(dir_path):
         with open(filename, 'r+') as f:
@@ -90,3 +91,18 @@ def _yield_yaml_files(dir_path):
             fname_lower = fname.lower()
             if fname_lower.endswith('.yml') or fname_lower.endswith('.yaml'):
                 yield os.path.join(root, fname)
+
+
+def get_yaml_parser():
+    """Returns an instance of the YAML parser with common settings
+
+    :rtype: ruamel.yaml.YAML
+    :return: YAML parser
+    """
+    yaml = YAML()
+    # IMPORTANT: ruamel will introduce a line break if the yaml line is longer than
+    # yaml.width. Unfortunately, this causes issues for JSON values nested within a
+    # YAML file, e.g. metadata.annotations."alm-examples" in a CSV file. The default
+    # value is 80. Set it to a more forgiving higher number to avoid issues
+    yaml.width = YAML_WIDTH
+    return yaml

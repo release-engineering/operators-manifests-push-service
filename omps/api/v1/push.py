@@ -10,10 +10,14 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import zipfile
 
 from flask import jsonify, current_app, request
-from ruamel.yaml import YAML
 
 from . import API
-from omps.api.common import extract_auth_token, replace_registries, adjust_csv_annotations
+from omps.api.common import (
+    adjust_csv_annotations,
+    extract_auth_token,
+    get_yaml_parser,
+    replace_registries,
+)
 from omps.constants import (
     ALLOWED_EXTENSIONS,
     DEFAULT_ZIPFILE_MAX_UNCOMPRESSED_SIZE,
@@ -173,7 +177,7 @@ def _process_package_name(quay_org, dir_path):
     If not found, or malformed, raise PackageValidationError.
     If package_name_suffix is configured, modify the packageName.
     """
-    yaml = YAML()
+    yaml = get_yaml_parser()
     for filename in sorted(os.listdir(dir_path)):
         filename = os.path.join(dir_path, filename)
         if filename.endswith('.yaml') or filename.endswith('.yml'):
