@@ -14,14 +14,16 @@ ENV WORKER_TIMEOUT 30
 
 WORKDIR /src
 RUN dnf -y install \
-    python3-gunicorn \
     python3-flask \
+    python3-gunicorn \
     python3-jsonschema \
     python3-koji \
-    python3-requests \
-    python3-ruamel-yaml \
     python3-pip \
     python3-pyyaml \
+    python3-requests \
+    python3-ruamel-yaml \
+    python3-semver \
+    python3-validators \
     && dnf -y clean all \
     && rm -rf /tmp/*
 
