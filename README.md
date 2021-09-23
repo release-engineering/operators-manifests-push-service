@@ -1,4 +1,6 @@
-# Operators Manifests Push Service (OMPS)
+# [ Deprecated ] - Operators Manifests Push Service (OMPS)
+
+**This is no longer maintained, please refer to OCP 4.5 hotfix process for app-registry operators document.**
 
 [![Build Status](https://travis-ci.org/release-engineering/operators-manifests-push-service.svg?branch=master)](https://travis-ci.org/release-engineering/operators-manifests-push-service)
 [![Coverage Status](https://coveralls.io/repos/github/release-engineering/operators-manifests-push-service/badge.svg?branch=master)](https://coveralls.io/github/release-engineering/operators-manifests-push-service?branch=master)
